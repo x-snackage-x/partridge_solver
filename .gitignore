@@ -61,4 +61,4 @@ build/
 .vscode/
 
 # executable
-vis
+*.e

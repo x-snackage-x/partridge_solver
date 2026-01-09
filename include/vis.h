@@ -14,7 +14,7 @@ typedef enum {
     GRAY = 240
 } COLOR;
 
-void prep_grid(int size);
-void render_grid(int size);
-void reset_grid(int size);
-void set_block(int size, COLOR color, int x_pos, int y_pos);
+void prep_vis_grid(int size);
+void render_vis_grid(int size);
+void reset_vis_grid(int size);
+void set_vis_block(int size, COLOR color, int x_pos, int y_pos);

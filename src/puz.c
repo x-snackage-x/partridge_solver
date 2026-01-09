@@ -1,0 +1,155 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <puz.h>
+
+void init_puzzle(puzzle_def* puzzle_def) {
+    if(puzzle_def->size > 1 && puzzle_def->size < 8) {
+        printf(
+            "The Partrdige puzzle has no solutions for sizes between(inc) 2 "
+            "and 7.\n");
+        printf("You have provided a puzzle size of : %d\n", puzzle_def->size);
+        exit(EXIT_SUCCESS);
+    }
+
+    // init Blocks
+    puzzle_def->blocks = calloc(1, sizeof(dynarr_head));
+    puzzle_def->blocks->elem_size = sizeof(block_def);
+    puzzle_def->blocks->dynarr_capacity = (size_t)(puzzle_def->size + 1);
+    dynarr_init(puzzle_def->blocks);
+
+    for(int i = 0; i <= puzzle_def->size; ++i) {
+        block_def curr_block = {i, i};
+        dynarr_push(puzzle_def->blocks, &curr_block);
+    }
+
+    // init Grid
+    puzzle_def->grid_dimension =
+        (puzzle_def->size * (puzzle_def->size + 1)) / 2;
+    int grid_size = puzzle_def->grid_dimension;
+    puzzle_def->puzzle_grid = malloc(grid_size * sizeof(int*));
+    puzzle_def->puzzle_grid[0] = malloc(grid_size * grid_size * sizeof(int));
+    for(int i = 1; i < grid_size; i++) {
+        puzzle_def->puzzle_grid[i] = puzzle_def->puzzle_grid[0] + i * grid_size;
+    }
+}
+
+int get_n_available_pieces(puzzle_def* puzzle_def, int block_id) {
+    block_def* blocks = (block_def*)puzzle_def->blocks->ptr_first_elem;
+    return blocks[block_id].free_pieces;
+}
+
+bool is_puzzle_solved(puzzle_def* puzzle_def) {
+    int** grid = puzzle_def->puzzle_grid;
+    for(int i = 0; i < puzzle_def->grid_dimension; ++i) {
+        for(int j = 0; j < puzzle_def->grid_dimension; ++j) {
+            if(grid[i][j] == 0) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool placement_conflicts(puzzle_def* puzzle_def,
+                         int block_id,
+                         int x_pos,
+                         int y_pos) {
+    if(x_pos > puzzle_def->grid_dimension - 1 ||
+       x_pos + block_id - 1 > puzzle_def->grid_dimension - 1 ||
+       y_pos > puzzle_def->grid_dimension - 1 ||
+       y_pos + block_id - 1 > puzzle_def->grid_dimension - 1) {
+        return false;
+    }
+    int** grid = puzzle_def->puzzle_grid;
+    for(int i = 0; i < block_id; ++i) {
+        for(int j = 0; j < block_id; ++j) {
+            if(grid[y_pos + i][x_pos + j] != 0) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+RETURN_CODES place_block(puzzle_def* puzzle_def,
+                         int block_id,
+                         int x_pos,
+                         int y_pos) {
+    if(get_n_available_pieces(puzzle_def, block_id) <= 0) {
+        return NO_FREE_PIECES;
+    }
+
+    if(!placement_conflicts(puzzle_def, block_id, x_pos, y_pos)) {
+        return CONFLICT_ON_GRID;
+    }
+
+    int** grid = puzzle_def->puzzle_grid;
+    for(int i = 0; i < block_id; ++i) {
+        for(int j = 0; j < block_id; ++j) {
+            grid[y_pos + i][x_pos + j] = block_id;
+        }
+    }
+    block_def* blocks = (block_def*)puzzle_def->blocks->ptr_first_elem;
+    --blocks[block_id].free_pieces;
+    return SUCCESS;
+}
+
+int main() {
+    puzzle_def my_puzzle_def = {0};
+    my_puzzle_def.size = 8;
+    init_puzzle(&my_puzzle_def);
+
+    printf("Print Grid:\n");
+    int** grid = my_puzzle_def.puzzle_grid;
+    for(int i = 0; i < my_puzzle_def.grid_dimension; ++i) {
+        for(int j = 0; j < my_puzzle_def.grid_dimension; ++j) {
+            printf("%d|", grid[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("---------------------------\n");
+
+    printf("Printing Blocks:\n");
+    printf("Block Dyn-array Cap: %ld - Block Dyn-array Size: %ld\n",
+           my_puzzle_def.blocks->dynarr_capacity,
+           my_puzzle_def.blocks->dynarr_size);
+    block_def* my_blocks = (block_def*)my_puzzle_def.blocks->ptr_first_elem;
+    for(int i = 0; i < my_puzzle_def.blocks->dynarr_capacity; ++i) {
+        printf("Block size: %d    Free sizes: %d\n", my_blocks->size,
+               get_n_available_pieces(&my_puzzle_def, i));
+        ++my_blocks;
+    }
+
+    printf("---------------------------\n");
+
+    printf("Testing Conflict Function:\n");
+    printf("No placements:\n");
+    printf("Testing 4 @ (50,5): %d\n", place_block(&my_puzzle_def, 4, 50, 5));
+    printf("Testing 4 @ (34,5): %d\n", place_block(&my_puzzle_def, 4, 34, 5));
+    printf("Placing 4 @ (32,5): %d\n", place_block(&my_puzzle_def, 4, 32, 5));
+    printf("Placing 7 @ (3,5): %d\n", place_block(&my_puzzle_def, 7, 3, 5));
+    printf("Testing 4 @ (2,3): %d\n", place_block(&my_puzzle_def, 4, 2, 3));
+    printf("Testing 4 @ (5,6): %d\n", place_block(&my_puzzle_def, 4, 5, 6));
+    printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
+    printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
+
+    for(int i = 0; i < my_puzzle_def.grid_dimension; ++i) {
+        for(int j = 0; j < my_puzzle_def.grid_dimension; ++j) {
+            printf("%d|", grid[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("Is puzzle solved: %d\n", is_puzzle_solved(&my_puzzle_def));
+
+    my_blocks = (block_def*)my_puzzle_def.blocks->ptr_first_elem;
+    for(int i = 0; i < my_puzzle_def.blocks->dynarr_capacity; ++i) {
+        printf("Block size: %d    Free sizes: %d\n", my_blocks->size,
+               get_n_available_pieces(&my_puzzle_def, i));
+        ++my_blocks;
+    }
+}

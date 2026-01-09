@@ -1,7 +1,7 @@
 IDIR=include
 
 CC=cc
-CFLAGS=-Wall 
+CFLAGS=-Wall
 INC=-I$(IDIR)
 
 ODIR=obj
@@ -9,10 +9,10 @@ SDIR=src
 
 LIBS=-lc
 
-_DEPS=vis.h
+_DEPS=elhaylib.h vis.h puz.h 
 DEPS=$(patsubst %,$(IDIR)/%,$(_DEPS))
      
-_OBJS=vis.o 
+_OBJS=elhaylib.o vis.o puz.o 
 OBJS=$(patsubst %,$(ODIR)/%,$(_OBJS))
 
 obj/%.o: $(SDIR)/%.c $(DEPS) | obj
@@ -22,10 +22,13 @@ obj:
 	mkdir -p $@
 
 vis: $(OBJS)
-	$(CC) -o vis $(ODIR)/vis.o $(CFLAGS) $(LIBS)
+	$(CC) -o vis.e $(ODIR)/vis.o $(CFLAGS) $(LIBS)
+
+puz: $(OBJS)
+	$(CC) -o puz.e $(ODIR)/puz.o $(ODIR)/elhaylib.o $(CFLAGS) $(LIBS)
 
 solver: $(OBJS)
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+	$(CC) -o sol.e $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
 
