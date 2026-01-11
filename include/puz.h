@@ -16,7 +16,9 @@ typedef struct puzzle_def {
 typedef enum RETURN_CODES {
     SUCCESS,
     NO_FREE_PIECES,
-    CONFLICT_ON_GRID
+    CONFLICT_ON_GRID,
+    NO_BLOCK_AT_POSITION,
+    CONFLICTING_BLOCK_TYPES
 } RETURN_CODES;
 
 void init_puzzle(puzzle_def* puzzle_def);
@@ -24,6 +26,10 @@ RETURN_CODES place_block(puzzle_def* puzzle_def,
                          int block_id,
                          int x_pos,
                          int y_pos);
+RETURN_CODES remove_block(puzzle_def* puzzle_def,
+                          int block_id,
+                          int x_pos,
+                          int y_pos);
 int get_n_available_pieces(puzzle_def* puzzle_def, int block_id);
 bool placement_conflicts(puzzle_def* puzzle_def,
                          int block_id,

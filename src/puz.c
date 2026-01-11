@@ -6,7 +6,7 @@
 void init_puzzle(puzzle_def* puzzle_def) {
     if(puzzle_def->size > 1 && puzzle_def->size < 8) {
         printf(
-            "The Partrdige puzzle has no solutions for sizes between(inc) 2 "
+            "The Partridge puzzle has no solutions for sizes between(inc) 2 "
             "and 7.\n");
         printf("You have provided a puzzle size of : %d\n", puzzle_def->size);
         exit(EXIT_SUCCESS);
@@ -97,6 +97,32 @@ RETURN_CODES place_block(puzzle_def* puzzle_def,
     return SUCCESS;
 }
 
+RETURN_CODES remove_block(puzzle_def* puzzle_def,
+                          int block_id,
+                          int x_pos,
+                          int y_pos) {
+    int** grid = puzzle_def->puzzle_grid;
+    if(grid[y_pos][x_pos] == 0) {
+        return NO_BLOCK_AT_POSITION;
+    }
+    for(int i = 0; i < block_id; ++i) {
+        for(int j = 0; j < block_id; ++j) {
+            if(grid[y_pos + i][x_pos + j] != block_id) {
+                return CONFLICTING_BLOCK_TYPES;
+            }
+        }
+    }
+
+    for(int i = 0; i < block_id; ++i) {
+        for(int j = 0; j < block_id; ++j) {
+            grid[y_pos + i][x_pos + j] = 0;
+        }
+    }
+    block_def* blocks = (block_def*)puzzle_def->blocks->ptr_first_elem;
+    ++blocks[block_id].free_pieces;
+    return SUCCESS;
+}
+
 int main() {
     puzzle_def my_puzzle_def = {0};
     my_puzzle_def.size = 8;
@@ -137,6 +163,24 @@ int main() {
     printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
     printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
 
+    for(int i = 0; i < my_puzzle_def.grid_dimension; ++i) {
+        for(int j = 0; j < my_puzzle_def.grid_dimension; ++j) {
+            printf("%d|", grid[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("Removing 1 @ (0,0): %d\n", remove_block(&my_puzzle_def, 1, 0, 0));
+    for(int i = 0; i < my_puzzle_def.grid_dimension; ++i) {
+        for(int j = 0; j < my_puzzle_def.grid_dimension; ++j) {
+            printf("%d|", grid[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("Removing 1 @ (0,0): %d\n", remove_block(&my_puzzle_def, 1, 0, 0));
+    printf("Removing 5 @ (3,5): %d\n", remove_block(&my_puzzle_def, 5, 3, 5));
+    printf("Removing 4 @ (32,5): %d\n", remove_block(&my_puzzle_def, 4, 32, 5));
     for(int i = 0; i < my_puzzle_def.grid_dimension; ++i) {
         for(int j = 0; j < my_puzzle_def.grid_dimension; ++j) {
             printf("%d|", grid[i][j]);

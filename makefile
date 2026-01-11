@@ -28,7 +28,7 @@ puz: $(OBJS)
 	$(CC) -o puz.e $(ODIR)/puz.o $(ODIR)/elhaylib.o $(CFLAGS) $(LIBS)
 
 solver: $(OBJS)
-	$(CC) -o sol.e $@ $^ $(CFLAGS) $(LIBS)
+	$(CC) -o solver.e $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
 
