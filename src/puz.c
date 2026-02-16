@@ -20,7 +20,7 @@ void init_puzzle(puzzle_def* puzzle_def) {
 
     for(int i = 0; i <= puzzle_def->size; ++i) {
         block_def curr_block = {i, i};
-        dynarr_push(puzzle_def->blocks, &curr_block);
+        dynarr_append(puzzle_def->blocks, &curr_block);
     }
 
     // init Grid
@@ -123,6 +123,23 @@ RETURN_CODES remove_block(puzzle_def* puzzle_def,
     return SUCCESS;
 }
 
+void print_grid(puzzle_def* my_puzzle_def, int** grid) {
+    for(int i = 0; i < my_puzzle_def->grid_dimension; ++i) {
+        for(int j = 0; j < my_puzzle_def->grid_dimension; ++j) {
+            printf("%d|", grid[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+void print_free_pieces(puzzle_def* my_puzzle_def, block_def* my_blocks) {
+    for(int i = 0; i < my_puzzle_def->blocks->dynarr_capacity; ++i) {
+        printf("Block size: %d    Free pieces: %d\n", my_blocks->size,
+               get_n_available_pieces(my_puzzle_def, i));
+        ++my_blocks;
+    }
+}
+
 int main() {
     puzzle_def my_puzzle_def = {0};
     my_puzzle_def.size = 8;
@@ -130,12 +147,7 @@ int main() {
 
     printf("Print Grid:\n");
     int** grid = my_puzzle_def.puzzle_grid;
-    for(int i = 0; i < my_puzzle_def.grid_dimension; ++i) {
-        for(int j = 0; j < my_puzzle_def.grid_dimension; ++j) {
-            printf("%d|", grid[i][j]);
-        }
-        printf("\n");
-    }
+    print_grid(&my_puzzle_def, grid);
 
     printf("---------------------------\n");
 
@@ -144,11 +156,7 @@ int main() {
            my_puzzle_def.blocks->dynarr_capacity,
            my_puzzle_def.blocks->dynarr_size);
     block_def* my_blocks = (block_def*)my_puzzle_def.blocks->ptr_first_elem;
-    for(int i = 0; i < my_puzzle_def.blocks->dynarr_capacity; ++i) {
-        printf("Block size: %d    Free sizes: %d\n", my_blocks->size,
-               get_n_available_pieces(&my_puzzle_def, i));
-        ++my_blocks;
-    }
+    print_free_pieces(&my_puzzle_def, my_blocks);
 
     printf("---------------------------\n");
 
@@ -163,37 +171,18 @@ int main() {
     printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
     printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
 
-    for(int i = 0; i < my_puzzle_def.grid_dimension; ++i) {
-        for(int j = 0; j < my_puzzle_def.grid_dimension; ++j) {
-            printf("%d|", grid[i][j]);
-        }
-        printf("\n");
-    }
+    print_grid(&my_puzzle_def, grid);
 
     printf("Removing 1 @ (0,0): %d\n", remove_block(&my_puzzle_def, 1, 0, 0));
-    for(int i = 0; i < my_puzzle_def.grid_dimension; ++i) {
-        for(int j = 0; j < my_puzzle_def.grid_dimension; ++j) {
-            printf("%d|", grid[i][j]);
-        }
-        printf("\n");
-    }
+    print_grid(&my_puzzle_def, grid);
 
     printf("Removing 1 @ (0,0): %d\n", remove_block(&my_puzzle_def, 1, 0, 0));
     printf("Removing 5 @ (3,5): %d\n", remove_block(&my_puzzle_def, 5, 3, 5));
     printf("Removing 4 @ (32,5): %d\n", remove_block(&my_puzzle_def, 4, 32, 5));
-    for(int i = 0; i < my_puzzle_def.grid_dimension; ++i) {
-        for(int j = 0; j < my_puzzle_def.grid_dimension; ++j) {
-            printf("%d|", grid[i][j]);
-        }
-        printf("\n");
-    }
+    print_grid(&my_puzzle_def, grid);
 
     printf("Is puzzle solved: %d\n", is_puzzle_solved(&my_puzzle_def));
 
     my_blocks = (block_def*)my_puzzle_def.blocks->ptr_first_elem;
-    for(int i = 0; i < my_puzzle_def.blocks->dynarr_capacity; ++i) {
-        printf("Block size: %d    Free sizes: %d\n", my_blocks->size,
-               get_n_available_pieces(&my_puzzle_def, i));
-        ++my_blocks;
-    }
+    print_free_pieces(&my_puzzle_def, my_blocks);
 }
