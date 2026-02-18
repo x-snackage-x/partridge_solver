@@ -21,18 +21,26 @@ typedef enum RETURN_CODES {
     CONFLICTING_BLOCK_TYPES
 } RETURN_CODES;
 
-void init_puzzle(puzzle_def* puzzle_def);
-RETURN_CODES place_block(puzzle_def* puzzle_def,
+// Only size is expected to be set
+// size := dimension of the larges tile
+void init_puzzle(puzzle_def* puzzle);
+
+RETURN_CODES place_block(puzzle_def* puzzle,
                          int block_id,
                          int x_pos,
                          int y_pos);
-RETURN_CODES remove_block(puzzle_def* puzzle_def,
+RETURN_CODES remove_block(puzzle_def* puzzle,
                           int block_id,
                           int x_pos,
                           int y_pos);
-int get_n_available_pieces(puzzle_def* puzzle_def, int block_id);
-bool placement_conflicts(puzzle_def* puzzle_def,
+
+int get_n_available_pieces(puzzle_def* puzzle, int block_id);
+
+bool placement_conflicts(puzzle_def* puzzle,
                          int block_id,
                          int x_pos,
                          int y_pos);
-bool is_puzzle_solved(puzzle_def* puzzle_def);
+bool is_puzzle_solved(puzzle_def* puzzle);
+
+void print_grid(puzzle_def* puzzle, int** grid);
+void print_free_pieces(puzzle_def* puzzle, block_def* my_blocks);
