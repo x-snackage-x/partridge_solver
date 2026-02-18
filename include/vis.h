@@ -1,3 +1,5 @@
+#pragma once
+
 #define TESTING
 
 typedef enum {
