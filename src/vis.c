@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef __linux__
 #include <unistd.h>
@@ -8,7 +9,23 @@
 #include <vis.h>
 #define STEP_SIZE 2
 
-void set_vis_block(int block_size, COLOR color, int x_pos, int y_pos) {
+COLOR* set_block_colors;
+int size;
+
+void def_block_colors(COLOR* in_block_colors, int size) {
+    set_block_colors = malloc(sizeof(int) * size);
+    memcpy(set_block_colors, in_block_colors, sizeof(int) * size);
+}
+
+COLOR get_block_color(int block_size) {
+    return *(set_block_colors + block_size - 1);
+}
+
+void set_vis_block(int block_size, int x_pos, int y_pos) {
+    COLOR color = get_block_color(block_size);
+    set_vis_block_color(block_size, color, x_pos, y_pos);
+}
+void set_vis_block_color(int block_size, COLOR color, int x_pos, int y_pos) {
     printf("\x1b[s");
 
     int x_shift = x_pos != 0 ? STEP_SIZE * x_pos + 1 : x_pos;
@@ -58,29 +75,46 @@ int main() {
     int grid_size = 45;
 
     prep_vis_grid(grid_size);
-    set_vis_block(2, GREEN, 1, 0);
-    set_vis_block(1, WHITE, 0, 0);
-    set_vis_block(2, ROYAL_BLUE, 5, 2);
-    set_vis_block(5, GRAY, 5, 5);
+    set_vis_block_color(2, GREEN, 1, 0);
+    set_vis_block_color(1, WHITE, 0, 0);
+    set_vis_block_color(2, ROYAL_BLUE, 5, 2);
+    set_vis_block_color(5, GRAY, 5, 5);
     render_vis_grid(grid_size);
     reset_vis_grid(grid_size);
 
     usleep(25 * 100000);
 
     prep_vis_grid(grid_size);
-    set_vis_block(2, GREEN, 1, 0);
-    set_vis_block(1, WHITE, 0, 0);
-    set_vis_block(2, BLUE, 5, 2);
+    set_vis_block_color(2, GREEN, 1, 0);
+    set_vis_block_color(1, WHITE, 0, 0);
+    set_vis_block_color(2, BLUE, 5, 2);
     render_vis_grid(grid_size);
     reset_vis_grid(grid_size);
 
     usleep(25 * 100000);
 
     prep_vis_grid(grid_size);
-    set_vis_block(2, GREEN, 1, 0);
-    set_vis_block(1, WHITE, 0, 0);
-    set_vis_block(2, BLUE, 5, 2);
-    set_vis_block(5, GRAY, 5, 5);
+    set_vis_block_color(2, GREEN, 1, 0);
+    set_vis_block_color(1, WHITE, 0, 0);
+    set_vis_block_color(2, BLUE, 5, 2);
+    set_vis_block_color(5, GRAY, 5, 5);
+    render_vis_grid(grid_size);
+    reset_vis_grid(grid_size);
+
+    usleep(25 * 100000);
+
+    COLOR blocks[] = {ROYAL_BLUE, ORANGE, MAGENTA, CYAN, RED};
+    def_block_colors(blocks, 5);
+    prep_vis_grid(grid_size);
+    set_vis_block_color(2, GREEN, 1, 0);
+    set_vis_block_color(1, WHITE, 0, 0);
+    set_vis_block_color(2, BLUE, 5, 2);
+    set_vis_block_color(5, GRAY, 5, 5);
+    set_vis_block(3, 1, 20);
+    set_vis_block(1, 0, 10);
+    set_vis_block(2, 5, 12);
+    set_vis_block(5, 5, 15);
+    set_vis_block(4, 5, 20);
     render_vis_grid(grid_size);
 
     usleep(2 * 1000000);
