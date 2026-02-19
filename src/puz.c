@@ -122,7 +122,8 @@ RETURN_CODES remove_block(puzzle_def* puzzle,
     return SUCCESS;
 }
 
-void print_grid(puzzle_def* puzzle, int** grid) {
+void print_grid(puzzle_def* puzzle) {
+    int** grid = puzzle->puzzle_grid;
     for(int i = 0; i < puzzle->grid_dimension; ++i) {
         for(int j = 0; j < puzzle->grid_dimension; ++j) {
             printf("%d|", grid[i][j]);
@@ -131,7 +132,8 @@ void print_grid(puzzle_def* puzzle, int** grid) {
     }
 }
 
-void print_free_pieces(puzzle_def* puzzle, block_def* my_blocks) {
+void print_free_pieces(puzzle_def* puzzle) {
+    block_def* my_blocks = (block_def*)puzzle->blocks->ptr_first_elem;
     for(int i = 0; i < puzzle->blocks->dynarr_capacity; ++i) {
         printf("Block size: %d    Free pieces: %d\n", my_blocks->size,
                get_n_available_pieces(puzzle, i));
@@ -145,8 +147,7 @@ int main() {
     init_puzzle(&my_puzzle_def);
 
     printf("Print Grid:\n");
-    int** grid = my_puzzle_def.puzzle_grid;
-    print_grid(&my_puzzle_def, grid);
+    print_grid(&my_puzzle_def);
 
     printf("---------------------------\n");
 
@@ -154,8 +155,7 @@ int main() {
     printf("Block Dyn-array Cap: %ld - Block Dyn-array Size: %ld\n",
            my_puzzle_def.blocks->dynarr_capacity,
            my_puzzle_def.blocks->dynarr_size);
-    block_def* my_blocks = (block_def*)my_puzzle_def.blocks->ptr_first_elem;
-    print_free_pieces(&my_puzzle_def, my_blocks);
+    print_free_pieces(&my_puzzle_def);
 
     printf("---------------------------\n");
 
@@ -170,18 +170,17 @@ int main() {
     printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
     printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
 
-    print_grid(&my_puzzle_def, grid);
+    print_grid(&my_puzzle_def);
 
     printf("Removing 1 @ (0,0): %d\n", remove_block(&my_puzzle_def, 1, 0, 0));
-    print_grid(&my_puzzle_def, grid);
+    print_grid(&my_puzzle_def);
 
     printf("Removing 1 @ (0,0): %d\n", remove_block(&my_puzzle_def, 1, 0, 0));
     printf("Removing 5 @ (3,5): %d\n", remove_block(&my_puzzle_def, 5, 3, 5));
     printf("Removing 4 @ (32,5): %d\n", remove_block(&my_puzzle_def, 4, 32, 5));
-    print_grid(&my_puzzle_def, grid);
+    print_grid(&my_puzzle_def);
 
     printf("Is puzzle solved: %d\n", is_puzzle_solved(&my_puzzle_def));
 
-    my_blocks = (block_def*)my_puzzle_def.blocks->ptr_first_elem;
-    print_free_pieces(&my_puzzle_def, my_blocks);
+    print_free_pieces(&my_puzzle_def);
 }

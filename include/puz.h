@@ -44,5 +44,5 @@ bool placement_conflicts(puzzle_def* puzzle,
                          int y_pos);
 bool is_puzzle_solved(puzzle_def* puzzle);
 
-void print_grid(puzzle_def* puzzle, int** grid);
-void print_free_pieces(puzzle_def* puzzle, block_def* my_blocks);
+void print_grid(puzzle_def* puzzle);
+void print_free_pieces(puzzle_def* puzzle);
