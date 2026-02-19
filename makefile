@@ -1,36 +1,62 @@
 IDIR=include
-
-CC=cc
-CFLAGS=-Wall
-INC=-I$(IDIR)
-
-ODIR=obj
 SDIR=src
-
+CC=cc
+CFLAGS=-Wall -ggdb
+INC=-I$(IDIR)
 LIBS=-lc
 
-_DEPS=elhaylib.h vis.h puz.h 
+# Headers
+_DEPS=elhaylib.h vis.h puz.h sol.h
 DEPS=$(patsubst %,$(IDIR)/%,$(_DEPS))
-     
-_OBJS=elhaylib.o vis.o puz.o 
-OBJS=$(patsubst %,$(ODIR)/%,$(_OBJS))
 
-obj/%.o: $(SDIR)/%.c $(DEPS) | obj
-	$(CC) -c $(INC) -o $@ $< $(CFLAGS) 
+# Default
+all: vis puz sol
 
-obj:
+# --------------------
+# VIS
+# --------------------
+VIS_ODIR=obj/vis
+VIS_OBJS=$(VIS_ODIR)/elhaylib.o $(VIS_ODIR)/vis.o
+
+$(VIS_ODIR)/%.o: $(SDIR)/%.c $(DEPS) | $(VIS_ODIR)
+	$(CC) -c $(INC) $(CFLAGS) -DBUILD_VIS $< -o $@
+
+$(VIS_ODIR):
 	mkdir -p $@
 
-vis: $(OBJS)
-	$(CC) -o vis.e $(ODIR)/vis.o $(CFLAGS) $(LIBS)
+vis: $(VIS_OBJS)
+	$(CC) -o vis.e $^ $(LIBS)
 
-puz: $(OBJS)
-	$(CC) -o puz.e $(ODIR)/puz.o $(ODIR)/elhaylib.o $(CFLAGS) $(LIBS)
+# --------------------
+# PUZ
+# --------------------
+PUZ_ODIR=obj/puz
+PUZ_OBJS=$(PUZ_ODIR)/elhaylib.o $(PUZ_ODIR)/puz.o
 
-solver: $(OBJS)
-	$(CC) -o solver.e $@ $^ $(CFLAGS) $(LIBS)
+$(PUZ_ODIR)/%.o: $(SDIR)/%.c $(DEPS) | $(PUZ_ODIR)
+	$(CC) -c $(INC) $(CFLAGS) -DBUILD_PUZ $< -o $@
 
-.PHONY: clean
+$(PUZ_ODIR):
+	mkdir -p $@
 
+puz: $(PUZ_OBJS)
+	$(CC) -o puz.e $^ $(LIBS)
+
+# --------------------
+# SOL
+# --------------------
+SOL_ODIR=obj/sol
+SOL_OBJS=$(SOL_ODIR)/elhaylib.o $(SOL_ODIR)/vis.o $(SOL_ODIR)/puz.o $(SOL_ODIR)/sol.o
+
+$(SOL_ODIR)/%.o: $(SDIR)/%.c $(DEPS) | $(SOL_ODIR)
+	$(CC) -c $(INC) $(CFLAGS) $< -o $@
+
+$(SOL_ODIR):
+	mkdir -p $@
+
+sol: $(SOL_OBJS)
+	$(CC) -o sol.e $^ $(LIBS)
+
+# --------------------
 clean:
-	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ 
+	rm -rf obj *.e

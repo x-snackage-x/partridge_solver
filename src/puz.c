@@ -141,6 +141,7 @@ void print_free_pieces(puzzle_def* puzzle) {
     }
 }
 
+#ifdef BUILD_PUZ
 int main() {
     puzzle_def my_puzzle_def = {0};
     my_puzzle_def.size = 8;
@@ -184,3 +185,4 @@ int main() {
 
     print_free_pieces(&my_puzzle_def);
 }
+#endif

@@ -71,6 +71,7 @@ void reset_vis_grid(int size) {
     printf("\x1b[%dA", size);
 }
 
+#ifdef BUILD_VIS
 int main() {
     int grid_size = 45;
 
@@ -119,3 +120,4 @@ int main() {
 
     usleep(2 * 1000000);
 }
+#endif
