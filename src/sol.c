@@ -43,7 +43,7 @@ bool line_scan_hor(puzzle_def* puzzle, point* result) {
 
 // - Find smallest, bounded gap in all line scans
 //     * Horizontally + Vertically
-bool find_smallets_gap(puzzle_def* puzzle, gap_search_result* res_struct) {
+bool find_smallest_gap(puzzle_def* puzzle, gap_search_result* res_struct) {
     res_struct->x_index = 0;
     res_struct->y_index = 0;
     res_struct->gap = 0;
@@ -134,7 +134,7 @@ bool find_smallets_gap(puzzle_def* puzzle, gap_search_result* res_struct) {
         res_struct->x_index = x_index_ver_scan;
         res_struct->y_index = y_index_ver_scan;
         res_struct->gap = size_ver_scan;
-        res_struct->type = VERTIICAL;
+        res_struct->type = VERTICAL;
     }
 
     return true;
@@ -149,7 +149,7 @@ void setup(int puzzle_type) {
 
 bool is_solvable_first_check(puzzle_def* puzzle) {
     gap_search_result result;
-    find_smallets_gap(puzzle, &result);
+    find_smallest_gap(puzzle, &result);
 
     return get_n_available_pieces(puzzle, result.gap) > 0;
 }

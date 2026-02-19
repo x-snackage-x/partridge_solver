@@ -3,7 +3,7 @@
 #include <elhaylib.h>
 #include <puz.h>
 
-typedef enum GAP_TYPE { VERTIICAL, HORIZONTAL, NOT_FOUND } GAP_TYPE;
+typedef enum GAP_TYPE { VERTICAL, HORIZONTAL, NOT_FOUND } GAP_TYPE;
 typedef struct {
     int x_index;
     int y_index;
@@ -28,4 +28,4 @@ void set_visualizer(VIS_F_PTR grid_prep_func,
 bool is_solvable_first_check(puzzle_def* puzzle);
 
 bool line_scan_hor(puzzle_def* puzzle, point* result);
-bool find_smallets_gap(puzzle_def* puzzle, gap_search_result* res_struct);
+bool find_smallest_gap(puzzle_def* puzzle, gap_search_result* res_struct);

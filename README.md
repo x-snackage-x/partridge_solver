@@ -35,8 +35,8 @@ Visualizer
 - Implement a GUI using `raylib`/`raygui`
 
 Portability
-- Port to Windows
-- Port to WASM using `emscripten`?
+- Port to Windows 
+- Port to WASM using `Emscripten`?
 
 Puzzle
 - Make it playable using console commands
