@@ -51,10 +51,10 @@ bool is_puzzle_solved(puzzle_def* puzzle) {
     return true;
 }
 
-bool placement_conflicts(puzzle_def* puzzle,
-                         int block_id,
-                         int x_pos,
-                         int y_pos) {
+bool placement_resolvable(puzzle_def* puzzle,
+                          int block_id,
+                          int x_pos,
+                          int y_pos) {
     if(x_pos > puzzle->grid_dimension - 1 ||
        x_pos + block_id - 1 > puzzle->grid_dimension - 1 ||
        y_pos > puzzle->grid_dimension - 1 ||
@@ -81,7 +81,7 @@ RETURN_CODES place_block(puzzle_def* puzzle,
         return NO_FREE_PIECES;
     }
 
-    if(!placement_conflicts(puzzle, block_id, x_pos, y_pos)) {
+    if(!placement_resolvable(puzzle, block_id, x_pos, y_pos)) {
         return CONFLICT_ON_GRID;
     }
 

@@ -38,10 +38,10 @@ RETURN_CODES remove_block(puzzle_def* puzzle,
 
 int get_n_available_pieces(puzzle_def* puzzle, int block_id);
 
-bool placement_conflicts(puzzle_def* puzzle,
-                         int block_id,
-                         int x_pos,
-                         int y_pos);
+bool placement_resolvable(puzzle_def* puzzle,
+                          int block_id,
+                          int x_pos,
+                          int y_pos);
 bool is_puzzle_solved(puzzle_def* puzzle);
 
 void print_grid(puzzle_def* puzzle);

@@ -26,6 +26,3 @@ void set_visualizer(VIS_F_PTR grid_prep_func,
                     VIS_SET_F_PTR block_set_func);
 
 bool is_solvable_first_check(puzzle_def* puzzle);
-
-bool line_scan_hor(puzzle_def* puzzle, point* result);
-bool find_smallest_gap(puzzle_def* puzzle, gap_search_result* res_struct);
