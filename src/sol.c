@@ -237,7 +237,12 @@ bool is_solvable_first_check(puzzle_def* puzzle) {
     gap_search_result result;
     find_smallest_gap(puzzle, &result);
 
-    return get_n_available_pieces(puzzle, result.gap) > 0;
+    bool is_solvabe = true;
+    if(result.gap <= puzzle->size) {
+        is_solvabe = (get_n_available_pieces(puzzle, result.gap) > 0);
+    }
+
+    return is_solvabe;
 }
 
 int random_tile_select(bool* filter, int max_tile_size) {
