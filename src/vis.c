@@ -39,11 +39,36 @@ void set_vis_block_color(int block_size, COLOR color, int x_pos, int y_pos) {
 
     for(int i = 0; i < block_size; ++i) {
         for(int j = 0; j < block_size; ++j) {
-            printf("\x1b[38;5;%dm\x1b[48;5;%dm▀\x1b[0m", color, color);
-            printf("\x1b[38;5;%dm\x1b[48;5;%dm▀\x1b[0m", color, color);
+            printf("\x1b[38;5;%dm\x1b[48;5;%dm▀▀\x1b[0m", color, color);
         }
         printf("\x1b[1B\x1b[%dG", x_shift);
     }
+    printf("\x1b[u");
+}
+
+void remove_vis_block(int block_size, int x_pos, int y_pos) {
+    printf("\x1b[s");
+
+    int x_shift = x_pos != 0 ? STEP_SIZE * x_pos + 1 : x_pos;
+    int y_shift = y_pos;
+    if(x_shift != 0) {
+        printf("\x1b[%dG", x_shift);
+    }
+    if(y_shift != 0) {
+        printf("\x1b[%dB", y_shift);
+    }
+
+    for(int i = 0; i < block_size; ++i) {
+        for(int j = 0; j < block_size; ++j) {
+#ifdef TESTING
+            printf("..");
+#else
+            printf("%*c\n", STEP_SIZE * size, ' ');
+#endif
+        }
+        printf("\x1b[1B\x1b[%dG", x_shift);
+    }
+
     printf("\x1b[u");
 }
 
@@ -99,6 +124,12 @@ int main() {
     set_vis_block_color(1, WHITE, 0, 0);
     set_vis_block_color(2, BLUE, 5, 2);
     set_vis_block_color(5, GRAY, 5, 5);
+    render_vis_grid(grid_size);
+    reset_vis_grid(grid_size);
+
+    usleep(25 * 100000);
+
+    remove_vis_block(1, 0, 0);
     render_vis_grid(grid_size);
     reset_vis_grid(grid_size);
 
