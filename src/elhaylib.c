@@ -554,6 +554,10 @@ tree_node* tree_prepare_node(node_type dtype,
                              size_t data_size,
                              void const* data) {
     tree_node* new_node_ptr = calloc(1, sizeof(tree_node) + data_size);
+    if(!new_node_ptr) {
+        perror("calloc failed");
+        exit(EXIT_FAILURE);
+    }
 
     new_node_ptr->data_size = data_size;
     new_node_ptr->dtype = dtype;
