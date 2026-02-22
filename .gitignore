@@ -57,6 +57,9 @@ dkms.conf
 # build directory
 build/
 
+# logs directory
+logs/
+
 # vscode directory
 .vscode/
 

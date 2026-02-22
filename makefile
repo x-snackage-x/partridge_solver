@@ -1,7 +1,7 @@
 IDIR=include
 SDIR=src
 CC=cc
-CFLAGS=-Wall -ggdb
+CFLAGS=-Wall
 INC=-I$(IDIR)
 LIBS=-lc
 
