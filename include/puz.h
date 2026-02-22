@@ -44,5 +44,5 @@ bool placement_resolvable(puzzle_def* puzzle,
                           int y_pos);
 bool is_puzzle_solved(puzzle_def* puzzle);
 
-void print_grid(puzzle_def* puzzle);
-void print_free_pieces(puzzle_def* puzzle);
+void print_grid(puzzle_def* puzzle, FILE* file_ptr);
+void print_free_pieces(puzzle_def* puzzle, FILE* file_ptr);

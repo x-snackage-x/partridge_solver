@@ -122,21 +122,27 @@ RETURN_CODES remove_block(puzzle_def* puzzle,
     return SUCCESS;
 }
 
-void print_grid(puzzle_def* puzzle) {
+void print_grid(puzzle_def* puzzle, FILE* file_ptr) {
+    if(file_ptr == NULL)
+        file_ptr = stdout;
+
     int** grid = puzzle->puzzle_grid;
     for(int i = 0; i < puzzle->grid_dimension; ++i) {
         for(int j = 0; j < puzzle->grid_dimension; ++j) {
-            printf("%d|", grid[i][j]);
+            fprintf(file_ptr, "%d|", grid[i][j]);
         }
-        printf("\n");
+        fprintf(file_ptr, "\n");
     }
 }
 
-void print_free_pieces(puzzle_def* puzzle) {
+void print_free_pieces(puzzle_def* puzzle, FILE* file_ptr) {
+    if(file_ptr == NULL)
+        file_ptr = stdout;
+
     block_def* my_blocks = (block_def*)puzzle->blocks->ptr_first_elem;
     for(int i = 0; i < puzzle->blocks->dynarr_capacity; ++i) {
-        printf("Block size: %d    Free pieces: %d\n", my_blocks->size,
-               get_n_available_pieces(puzzle, i));
+        fprintf(file_ptr, "Block size: %d    Free pieces: %d\n",
+                my_blocks->size, get_n_available_pieces(puzzle, i));
         ++my_blocks;
     }
 }
