@@ -17,12 +17,14 @@ typedef struct {
 } point;
 
 typedef void (*VIS_F_PTR)(int);
-typedef void (*VIS_SET_F_PTR)(int, int, int, int);
+typedef void (*VIS_SET_F_PTR)(int, int, int);
+typedef void (*VIS_SET_C_PTR)(int*, int);
 
 void setup(int puzzle_type);
-void set_visualizer(VIS_F_PTR grid_prep_func,
-                    VIS_F_PTR grid_render_func,
-                    VIS_F_PTR grid_reset_func,
-                    VIS_SET_F_PTR block_set_func);
-
-bool is_solvable_first_check(puzzle_def* puzzle);
+void set_visualizer(VIS_F_PTR grid_prep_func_in,
+                    VIS_F_PTR grid_render_func_in,
+                    VIS_F_PTR grid_reset_func_in,
+                    VIS_SET_F_PTR block_set_func_in,
+                    VIS_SET_F_PTR block_remove_func_in,
+                    VIS_SET_C_PTR block_set_color_func_in);
+bool solution_search();

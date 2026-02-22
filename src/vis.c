@@ -12,7 +12,7 @@
 COLOR* set_block_colors;
 int size;
 
-void def_block_colors(COLOR* in_block_colors, int size) {
+void def_block_colors(int* in_block_colors, int size) {
     set_block_colors = malloc(sizeof(int) * size);
     memcpy(set_block_colors, in_block_colors, sizeof(int) * size);
 }
@@ -63,7 +63,7 @@ void remove_vis_block(int block_size, int x_pos, int y_pos) {
 #ifdef TESTING
             printf("..");
 #else
-            printf("%*c\n", STEP_SIZE * size, ' ');
+            printf("  ");
 #endif
         }
         printf("\x1b[1B\x1b[%dG", x_shift);
@@ -136,7 +136,7 @@ int main() {
     usleep(25 * 100000);
 
     COLOR blocks[] = {ROYAL_BLUE, ORANGE, MAGENTA, CYAN, RED};
-    def_block_colors(blocks, 5);
+    def_block_colors((int*)blocks, 5);
     prep_vis_grid(grid_size);
     set_vis_block_color(2, GREEN, 1, 0);
     set_vis_block_color(1, WHITE, 0, 0);
