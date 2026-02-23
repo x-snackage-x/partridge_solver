@@ -66,6 +66,7 @@ bool is_solvable_first_check(puzzle_def* puzzle);
 
 int n_available_tiles(bool* valid_tiles);
 
+void printWinningBranch(FILE* file_ptr);
 void printNode(tree_node* ptr_node, FILE* file_ptr);
 void printTree(tree_node* ptr_node,
                int depth,
@@ -128,8 +129,6 @@ void set_visualizer(VIS_F_PTR grid_prep_func_in,
     block_set_func = block_set_func_in;
     block_remove_func = block_remove_func_in;
     block_set_color_func = block_set_color_func_in;
-
-    visualizer_set = true;
 }
 
 tree_node* record_placement(int selected_tile,
@@ -190,7 +189,7 @@ bool solution_search() {
 
     point result_buffer = {0};
     int loop_n = 0;
-    int max_loops = 100 * 1000 * 1000;
+    int max_loops = 100 * 1000 * 1000;  // TODO remove limiter
     while(!is_solved && loop_n++ < max_loops) {
         if(loop_n % 100000 == 0 && !visualizer_set) {
             printf("Current iter.: %d/%d", loop_n, max_loops);
@@ -315,82 +314,9 @@ finish:
     return is_puzzle_solved(my_puzzle);
 }
 
-int setup_test_config() {
-    my_puzzle = calloc(1, sizeof(puzzle_def));
-    int puzzle_type = 8;
-    my_puzzle->size = puzzle_type;
-    init_puzzle(my_puzzle);
-
-    node_size = sizeof(node_placement);
-    tree_init(&placement_record);
-
-    int selected_tile = 8;
-    root_tile = selected_tile;
-    bool* valid_tiles = malloc(sizeof(bool) * (puzzle_type + 1));
-    memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
-    valid_tiles[0] = false;
-
-    place_block(my_puzzle, selected_tile, 0, 0);
-
-    node_placement* node_buffer = malloc(node_size);
-    node_buffer->tile_type = selected_tile;
-    node_buffer->x_pos = 0;
-    node_buffer->y_pos = 0;
-    memcpy(node_buffer->valid_tiles, valid_tiles,
-           sizeof(bool) * (puzzle_type + 1));
-
-    tree_node_root(&tree_result, &placement_record, NODE_PARTRIDGE, node_size,
-                   node_buffer);
-    last_placement = tree_result.node_ptr;
-
-    selected_tile = 1;
-    root_tile = selected_tile;
-    memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
-    valid_tiles[0] = false;
-
-    place_block(my_puzzle, selected_tile, 8, 0);
-
-    node_buffer->tile_type = selected_tile;
-    node_buffer->x_pos = 8;
-    node_buffer->y_pos = 0;
-    memcpy(node_buffer->valid_tiles, valid_tiles,
-           sizeof(bool) * (puzzle_type + 1));
-
-    tree_node_add(&tree_result, &placement_record, last_placement,
-                  NODE_PARTRIDGE, node_size, node_buffer);
-    last_placement = tree_result.node_ptr;
-
-    selected_tile = 5;
-    root_tile = selected_tile;
-    memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
-    valid_tiles[0] = false;
-
-    place_block(my_puzzle, selected_tile, 9, 0);
-
-    node_buffer->tile_type = selected_tile;
-    node_buffer->x_pos = 9;
-    node_buffer->y_pos = 0;
-    memcpy(node_buffer->valid_tiles, valid_tiles,
-           sizeof(bool) * (puzzle_type + 1));
-
-    tree_node_add(&tree_result, &placement_record, last_placement,
-                  NODE_PARTRIDGE, node_size, node_buffer);
-    last_placement = tree_result.node_ptr;
-
-    free(valid_tiles);
-    free(node_buffer);
-
-    print_grid(my_puzzle, stdout);
-
-    is_solvable = is_solvable_first_check(my_puzzle);
-    printf("Puzzle Status: Solvable: %s - Solved: %s\n\n",
-           is_solvable ? "true" : "false", is_solved ? "true" : "false");
-
-    return 0;
-}
-
 int main() {
     print_full_log = false;
+    visualizer_set = false;
 
     // Make logs dir
     struct stat st = {0};
@@ -405,10 +331,10 @@ int main() {
     int puzzle_type = 8;
     setup(puzzle_type);
 
-    set_visualizer(prep_vis_grid, render_vis_grid, reset_vis_grid,
-                   record_vis_grid, set_vis_block, remove_vis_block,
-                   def_block_colors);
     if(visualizer_set) {
+        set_visualizer(prep_vis_grid, render_vis_grid, reset_vis_grid,
+                       record_vis_grid, set_vis_block, remove_vis_block,
+                       def_block_colors);
         COLOR blocks[] = {WHITE, ROYAL_BLUE, ORANGE, MAGENTA, CYAN,
                           RED,   GREEN,      GRAY,   YELLOW,  BLACK};
         block_set_color_func((int*)blocks, my_puzzle->size);
@@ -447,7 +373,7 @@ int main() {
 
     printf("\nTree Size: %zu Nodes\n", placement_record.tree_size);
     fprintf(tree_fptr, "Tree Size: %zu Nodes\n", placement_record.tree_size);
-    fprintf(log_fptr, "Tree Size: %zu Nodes\n", placement_record.tree_size);
+    fprintf(log_fptr, "\nTree Size: %zu Nodes\n", placement_record.tree_size);
 
     printf("Solve Time: %f seconds\n", solve_time);
     fprintf(log_fptr, "Solve Time: %f seconds\n", solve_time);
@@ -455,10 +381,13 @@ int main() {
     bool* flags = malloc(sizeof(bool) * placement_record.tree_size);
     memset(flags, true, placement_record.tree_size);
 
-    if(placement_record.tree_size <= 100000)
+    if(is_solved && placement_record.tree_size <= 100000) {
         printTree(placement_record.tree_root, 0, false, flags, tree_fptr);
+    } else if(is_solved) {
+        printWinningBranch(tree_fptr);
+    }
 
-    // Close the file
+    // Close the files
     fclose(log_fptr);
     fclose(tree_fptr);
 
@@ -641,6 +570,47 @@ int n_available_tiles(bool* valid_tiles) {
         available_tiles += valid_tiles[i] ? 1 : 0;
     }
     return available_tiles;
+}
+
+void printWinningBranch(FILE* file_ptr) {
+    int extra_spaces = my_puzzle->size - 8;
+    extra_spaces = extra_spaces < 0 ? 0 : extra_spaces;
+    int extra_spaces_l = extra_spaces / 2 + extra_spaces % 2;
+    int extra_spaces_r = extra_spaces / 2;
+
+    tree_node* current_node = last_placement;
+    node_placement placement_data = {0};
+    bool* tile_bools;
+    bool ascending = true;
+    while(ascending) {
+        placement_data = *(node_placement*)current_node->data;
+
+        tile_bools = (bool*)&placement_data.valid_tiles;
+
+        fprintf(file_ptr, "┌─────────────────────────%*s┐\n", extra_spaces,
+                "─");
+        fprintf(file_ptr, "│ Tile: %2d %*s-%*s Pos.:(%2d, %2d) │\n",
+                placement_data.tile_type, extra_spaces_l, "", extra_spaces_r,
+                "", placement_data.x_pos, placement_data.y_pos);
+        fprintf(file_ptr, "│ Valid Tiles:   ");
+        for(int i = 0; i < my_puzzle->size; ++i) {
+            fprintf(file_ptr, "%d", tile_bools[i + 1] ? 1 : 0);
+        }
+        fprintf(file_ptr, "  │\n");
+        fprintf(file_ptr, "└─────────────────────────%*s┘\n", extra_spaces,
+                "─");
+
+        if(current_node->parent != NULL) {
+            fprintf(file_ptr, "             %*s∧\n", extra_spaces_l, "");
+            fprintf(file_ptr, "            %*s/ \\\n", extra_spaces_l, "");
+            fprintf(file_ptr, "             %*s│\n", extra_spaces_l, "");
+            fprintf(file_ptr, "             %*s│\n", extra_spaces_l, "");
+        } else {
+            ascending = false;
+        }
+
+        current_node = current_node->parent;
+    }
 }
 
 void printNode(tree_node* ptr_node, FILE* file_ptr) {
