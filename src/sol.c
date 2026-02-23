@@ -95,9 +95,7 @@ void setup(int puzzle_type) {
     memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
     valid_tiles[0] = false;
 
-    point result_buffer = {0};
-    place_block(my_puzzle, selected_tile, result_buffer.x_index,
-                result_buffer.y_index);
+    place_block(my_puzzle, selected_tile, 0, 0);
     if(print_full_log)
         fprintf(log_fptr, "Placed Root tile: %d\n", selected_tile);
 
@@ -317,6 +315,80 @@ finish:
     return is_puzzle_solved(my_puzzle);
 }
 
+int setup_test_config() {
+    my_puzzle = calloc(1, sizeof(puzzle_def));
+    int puzzle_type = 8;
+    my_puzzle->size = puzzle_type;
+    init_puzzle(my_puzzle);
+
+    node_size = sizeof(node_placement);
+    tree_init(&placement_record);
+
+    int selected_tile = 8;
+    root_tile = selected_tile;
+    bool* valid_tiles = malloc(sizeof(bool) * (puzzle_type + 1));
+    memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
+    valid_tiles[0] = false;
+
+    place_block(my_puzzle, selected_tile, 0, 0);
+
+    node_placement* node_buffer = malloc(node_size);
+    node_buffer->tile_type = selected_tile;
+    node_buffer->x_pos = 0;
+    node_buffer->y_pos = 0;
+    memcpy(node_buffer->valid_tiles, valid_tiles,
+           sizeof(bool) * (puzzle_type + 1));
+
+    tree_node_root(&tree_result, &placement_record, NODE_PARTRIDGE, node_size,
+                   node_buffer);
+    last_placement = tree_result.node_ptr;
+
+    selected_tile = 1;
+    root_tile = selected_tile;
+    memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
+    valid_tiles[0] = false;
+
+    place_block(my_puzzle, selected_tile, 8, 0);
+
+    node_buffer->tile_type = selected_tile;
+    node_buffer->x_pos = 8;
+    node_buffer->y_pos = 0;
+    memcpy(node_buffer->valid_tiles, valid_tiles,
+           sizeof(bool) * (puzzle_type + 1));
+
+    tree_node_add(&tree_result, &placement_record, last_placement,
+                  NODE_PARTRIDGE, node_size, node_buffer);
+    last_placement = tree_result.node_ptr;
+
+    selected_tile = 5;
+    root_tile = selected_tile;
+    memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
+    valid_tiles[0] = false;
+
+    place_block(my_puzzle, selected_tile, 9, 0);
+
+    node_buffer->tile_type = selected_tile;
+    node_buffer->x_pos = 9;
+    node_buffer->y_pos = 0;
+    memcpy(node_buffer->valid_tiles, valid_tiles,
+           sizeof(bool) * (puzzle_type + 1));
+
+    tree_node_add(&tree_result, &placement_record, last_placement,
+                  NODE_PARTRIDGE, node_size, node_buffer);
+    last_placement = tree_result.node_ptr;
+
+    free(valid_tiles);
+    free(node_buffer);
+
+    print_grid(my_puzzle, stdout);
+
+    is_solvable = is_solvable_first_check(my_puzzle);
+    printf("Puzzle Status: Solvable: %s - Solved: %s\n\n",
+           is_solvable ? "true" : "false", is_solved ? "true" : "false");
+
+    return 0;
+}
+
 int main() {
     print_full_log = false;
 
@@ -374,7 +446,7 @@ int main() {
     print_free_pieces(my_puzzle, log_fptr);
 
     printf("\nTree Size: %zu Nodes\n", placement_record.tree_size);
-    fprintf(tree_fptr, "\nTree Size: %zu Nodes\n", placement_record.tree_size);
+    fprintf(tree_fptr, "Tree Size: %zu Nodes\n", placement_record.tree_size);
     fprintf(log_fptr, "Tree Size: %zu Nodes\n", placement_record.tree_size);
 
     printf("Solve Time: %f seconds\n", solve_time);
@@ -389,6 +461,8 @@ int main() {
     // Close the file
     fclose(log_fptr);
     fclose(tree_fptr);
+
+    return 0;
 }
 
 bool line_scan_hor(puzzle_def* puzzle, point* result) {
@@ -517,7 +591,7 @@ bool is_solvable_first_check(puzzle_def* puzzle) {
     }
 
     bool is_solvable = true;
-    if(!gap_bool && result.gap <= puzzle->size) {
+    if(gap_bool && result.gap <= puzzle->size) {
         if(result.gap < smallest_available_tile)
             is_solvable = false;
     }
