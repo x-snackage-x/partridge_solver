@@ -74,6 +74,8 @@ void printTree(tree_node* ptr_node,
                FILE* file_ptr);
 
 void setup(int puzzle_type) {
+    srand(time(NULL));
+
     my_puzzle = calloc(1, sizeof(puzzle_def));
 
     my_puzzle->size = puzzle_type;
@@ -112,8 +114,6 @@ void setup(int puzzle_type) {
     free(valid_tiles);
     free(node_buffer);
     root_tile = selected_tile;
-
-    srand(time(NULL));
 }
 
 void set_visualizer(VIS_F_PTR grid_prep_func_in,
