@@ -96,6 +96,10 @@ void reset_vis_grid(int size) {
     printf("\x1b[%dA", size);
 }
 
+void record_vis_grid(int size) {
+    printf("\x1b[%dB\n", size);
+}
+
 #ifdef BUILD_VIS
 int main() {
     int grid_size = 45;

@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#ifdef __linux__
+#include <unistd.h>
+#endif
 
 #include <signal.h>
 #include <sys/stat.h>
@@ -24,6 +27,7 @@ bool visualizer_set;
 VIS_F_PTR grid_prep_func;
 VIS_F_PTR grid_render_func;
 VIS_F_PTR grid_reset_func;
+VIS_F_PTR grid_record_func;
 VIS_SET_F_PTR block_set_func;
 VIS_SET_F_PTR block_remove_func;
 VIS_SET_C_PTR block_set_color_func;
@@ -34,6 +38,8 @@ tree_head placement_record;
 tree_op_res tree_result;
 size_t node_size;
 tree_node* last_placement;
+
+int root_tile;
 
 // the bool valid_tiles[] array describes all the tiles
 // that have been attempted as children
@@ -78,14 +84,12 @@ void setup(int puzzle_type) {
 
     // TODO change to dummy node
     // place root node
+    int min_Tile = 5;
+    if(puzzle_type <= 4) {
+        min_Tile = 1;
+    }
+    int selected_tile = rand() % (puzzle_type + 1 - min_Tile) + min_Tile;
     bool* valid_tiles = malloc(sizeof(bool) * (puzzle_type + 1));
-    memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
-    valid_tiles[0] = false;
-    valid_tiles[1] = false;
-    valid_tiles[2] = false;
-    valid_tiles[3] = false;
-    valid_tiles[4] = false;
-    int selected_tile = random_tile_select(valid_tiles, puzzle_type);
     memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
     valid_tiles[0] = false;
 
@@ -107,6 +111,7 @@ void setup(int puzzle_type) {
     last_placement = tree_result.node_ptr;
     free(valid_tiles);
     free(node_buffer);
+    root_tile = selected_tile;
 
     srand(time(NULL));
 }
@@ -114,12 +119,14 @@ void setup(int puzzle_type) {
 void set_visualizer(VIS_F_PTR grid_prep_func_in,
                     VIS_F_PTR grid_render_func_in,
                     VIS_F_PTR grid_reset_func_in,
+                    VIS_F_PTR grid_record_func_in,
                     VIS_SET_F_PTR block_set_func_in,
                     VIS_SET_F_PTR block_remove_func_in,
                     VIS_SET_C_PTR block_set_color_func_in) {
     grid_prep_func = grid_prep_func_in;
     grid_render_func = grid_render_func_in;
     grid_reset_func = grid_reset_func_in;
+    grid_record_func = grid_record_func_in;
     block_set_func = block_set_func_in;
     block_remove_func = block_remove_func_in;
     block_set_color_func = block_set_color_func_in;
@@ -148,26 +155,31 @@ tree_node* record_placement(int selected_tile,
         block_set_func(selected_tile, x_pos, y_pos);
         grid_render_func(my_puzzle->grid_dimension);
         grid_reset_func(my_puzzle->grid_dimension);
+        if(my_puzzle->size < 8)
+            usleep(5 * 1000);
     }
 
     return tree_result.node_ptr;
 }
 
-void record_removal(int selected_tile,
-                    int x_pos,
-                    int y_pos,
-                    tree_node* parent) {
-    /*     node_placement* parent_placement_data =
-       (node_placement*)parent->data; bool* valid_tiles =
-       (bool*)&parent_placement_data->valid_tiles; valid_tiles[selected_tile] =
-       false; */
+bool* record_removal(int selected_tile,
+                     int x_pos,
+                     int y_pos,
+                     tree_node* parent) {
+    node_placement* parent_placement_data = (node_placement*)parent->data;
+    bool* valid_tiles = parent_placement_data->valid_tiles;
+    valid_tiles[selected_tile] = false;
 
     // visualize removal
     if(visualizer_set) {
         block_remove_func(selected_tile, x_pos, y_pos);
         grid_render_func(my_puzzle->grid_dimension);
         grid_reset_func(my_puzzle->grid_dimension);
+        if(my_puzzle->size < 8)
+            usleep(5 * 1000);
     }
+
+    return valid_tiles;
 }
 
 bool solution_search() {
@@ -178,7 +190,7 @@ bool solution_search() {
 
     bool* valid_tiles;
 
-    point result_buffer;
+    point result_buffer = {0};
     int loop_n = 0;
     int max_loops = 100 * 1000 * 1000;
     while(!is_solved && loop_n++ < max_loops) {
@@ -213,8 +225,8 @@ bool solution_search() {
                     record_placement(selected_tile, result_buffer.x_index,
                                      result_buffer.y_index, last_placement);
 
-                // TODO set valid tile to false if tile is exhausted with last
-                // placement
+                // TODO set valid tile to false if tile is exhausted with
+                // last placement
             } else {
                 valid_tiles[selected_tile] = false;
                 if(print_full_log)
@@ -235,14 +247,9 @@ bool solution_search() {
             remove_block(my_puzzle, cur_placement_data.tile_type,
                          cur_placement_data.x_pos, cur_placement_data.y_pos);
 
-            node_placement* parent_placement_data =
-                (node_placement*)parent->data;
-            valid_tiles = (bool*)&parent_placement_data->valid_tiles;
-            valid_tiles[cur_placement_data.tile_type] = false;
-
-            record_removal(cur_placement_data.tile_type,
-                           cur_placement_data.x_pos, cur_placement_data.y_pos,
-                           parent);
+            valid_tiles = record_removal(cur_placement_data.tile_type,
+                                         cur_placement_data.x_pos,
+                                         cur_placement_data.y_pos, parent);
 
             if(print_full_log)
                 fprintf(log_fptr, " Remove tile: %d, Pos. (%2d,%2d)\n",
@@ -281,14 +288,9 @@ bool solution_search() {
                 goto finish;
             }
 
-            node_placement* parent_placement_data =
-                (node_placement*)parent->data;
-            valid_tiles = (bool*)&parent_placement_data->valid_tiles;
-            valid_tiles[cur_placement_data.tile_type] = false;
-
-            record_removal(cur_placement_data.tile_type,
-                           cur_placement_data.x_pos, cur_placement_data.y_pos,
-                           parent);
+            valid_tiles = record_removal(cur_placement_data.tile_type,
+                                         cur_placement_data.x_pos,
+                                         cur_placement_data.y_pos, parent);
 
             if(print_full_log)
                 fprintf(log_fptr, " Remove tile: %d, Pos. (%2d,%2d)\n",
@@ -331,21 +333,39 @@ int main() {
     int puzzle_type = 8;
     setup(puzzle_type);
 
-    // set_visualizer(prep_vis_grid, render_vis_grid, reset_vis_grid,
-    //                set_vis_block, remove_vis_block, def_block_colors);
+    set_visualizer(prep_vis_grid, render_vis_grid, reset_vis_grid,
+                   record_vis_grid, set_vis_block, remove_vis_block,
+                   def_block_colors);
     if(visualizer_set) {
         COLOR blocks[] = {WHITE, ROYAL_BLUE, ORANGE, MAGENTA, CYAN,
                           RED,   GREEN,      GRAY,   YELLOW,  BLACK};
         block_set_color_func((int*)blocks, my_puzzle->size);
         grid_prep_func(my_puzzle->grid_dimension);
+
+        // record root tile
+        block_set_func(root_tile, 0, 0);
+        grid_render_func(my_puzzle->grid_dimension);
+        grid_reset_func(my_puzzle->grid_dimension);
+        usleep(5 * 1000);
     }
+
+    clock_t begin = clock();
 
     is_solvable = solution_search();
 
+    clock_t end = clock();
+    double solve_time = (double)(end - begin) / CLOCKS_PER_SEC;
+
+    if(is_solved && visualizer_set) {
+        grid_record_func(my_puzzle->grid_dimension);
+    }
+
     fprintf(log_fptr, "Puzzle Status: Solvable: %s - Solved: %s\n\n",
             is_solvable ? "true" : "false", is_solved ? "true" : "false");
-    printf("Puzzle Status: Solvable: %s - Solved: %s\n\n",
+    printf("Puzzle Status: Solvable: %s - Solved: %s\n",
            is_solvable ? "true" : "false", is_solved ? "true" : "false");
+    printf("\33[2K\r\n");
+
     print_grid(my_puzzle, NULL);
     printf("\n");
     print_free_pieces(my_puzzle, NULL);
@@ -354,12 +374,17 @@ int main() {
     print_free_pieces(my_puzzle, log_fptr);
 
     printf("\nTree Size: %zu Nodes\n", placement_record.tree_size);
-    fprintf(tree_fptr, "Tree Size: %zu Nodes\n", placement_record.tree_size);
+    fprintf(tree_fptr, "\nTree Size: %zu Nodes\n", placement_record.tree_size);
+    fprintf(log_fptr, "Tree Size: %zu Nodes\n", placement_record.tree_size);
+
+    printf("Solve Time: %f seconds\n", solve_time);
+    fprintf(log_fptr, "Solve Time: %f seconds\n", solve_time);
 
     bool* flags = malloc(sizeof(bool) * placement_record.tree_size);
     memset(flags, true, placement_record.tree_size);
 
-    // printTree(placement_record.tree_root, 0, false, flags, tree_fptr);
+    if(placement_record.tree_size <= 100000)
+        printTree(placement_record.tree_root, 0, false, flags, tree_fptr);
 
     // Close the file
     fclose(log_fptr);
@@ -512,7 +537,7 @@ int random_tile_select(bool* filter, int max_tile_size) {
     bool tile_not_found = true;
     int random_tile = 0;
     do {
-        random_tile = rand() % (max_tile_size + 1);
+        random_tile = rand() % max_tile_size + 1;
         for(int i = 0; i < j && tile_not_found; ++i) {
             if(candidate_tiles[i] == random_tile) {
                 tile_not_found = false;
@@ -556,7 +581,8 @@ void printNode(tree_node* ptr_node, FILE* file_ptr) {
     fprintf(file_ptr, "]\n");
 }
 
-// adapted from: https://www.geeksforgeeks.org/dsa/print-n-ary-tree-graphically/
+// adapted from:
+// https://www.geeksforgeeks.org/dsa/print-n-ary-tree-graphically/
 void printTree(tree_node* ptr_node,
                int depth,
                bool isLast,
