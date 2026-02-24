@@ -167,12 +167,6 @@ tree_node* record_placement(int selected_tile,
         block_set_func(selected_tile, x_pos, y_pos);
         grid_render_func(my_puzzle->grid_dimension);
         grid_reset_func(my_puzzle->grid_dimension);
-        if(my_puzzle->size < 8)
-#ifdef _WIN32
-            Sleep(0.0005);
-#else
-            usleep(5 * 100);
-#endif
     }
 
     return tree_result.node_ptr;
@@ -191,12 +185,6 @@ bool* record_removal(int selected_tile,
         block_remove_func(selected_tile, x_pos, y_pos);
         grid_render_func(my_puzzle->grid_dimension);
         grid_reset_func(my_puzzle->grid_dimension);
-        if(my_puzzle->size < 8)
-#ifdef _WIN32
-            Sleep(0.0005);
-#else
-            usleep(5 * 100);
-#endif
     }
 
     return valid_tiles;
@@ -213,7 +201,7 @@ bool solution_search() {
     point result_buffer = {0};
     loop_n = 0;
     while(!is_solved) {
-        if(loop_n % 100000 == 0 && !visualizer_set) {
+        if(++loop_n % 100000 == 0 && !visualizer_set) {
             printf("Current iter.: %d", loop_n);
             fflush(stdout);
             printf("\r");
@@ -328,7 +316,11 @@ int main(int argc, char* argv[]) {
     // Make logs dir
     struct stat st = {0};
     if(stat("logs", &st) == -1) {
+#ifdef __linux__
         mkdir("logs", 0700);
+#elif _WIN32
+        mkdir("logs");
+#endif
     }
 
     // Open a file in writing mode
@@ -351,9 +343,9 @@ int main(int argc, char* argv[]) {
         grid_render_func(my_puzzle->grid_dimension);
         grid_reset_func(my_puzzle->grid_dimension);
 #ifdef _WIN32
-        Sleep(0.0005);
+        Sleep(0.5);
 #else
-        usleep(5 * 100);
+        usleep(5 * 10000);
 #endif
     }
 

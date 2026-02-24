@@ -82,15 +82,23 @@ $(SOL_PROD_ODIR):
 sol_prod: $(SOL_OBJS)
 	$(CC) -o sol_prod.out $^ $(LIBS)
 
-# Prod MSVC Windows build: for documentation only
-#sol_prod_win:
-#	mkdir obj\sol_msvc 2>nul
-#	cl /O2 /I$(IDIR) /Foobj\sol_msvc\ /Fe:sol_prod.exe \
-#	   $(SDIR)/elhaylib.c \
-#	   $(SDIR)/vis.c \
-#	   $(SDIR)/puz.c \
-#	   $(SDIR)/sol.c
+# Prod MinGW Windows build:
+sol_prod:CFLAGS = -Wall $(PROD_FLAGS)
+SOL_WIN_ODIR=obj/sol_mingw
+SOL_OBJS= $(SOL_WIN_ODIR)/elhaylib.o \
+		    $(SOL_WIN_ODIR)/vis.o \
+		    $(SOL_WIN_ODIR)/puz.o \
+		    $(SOL_WIN_ODIR)/sol.o
+
+$(SOL_WIN_ODIR)/%.o: $(SDIR)/%.c $(DEPS) | $(SOL_WIN_ODIR)
+	$(CC_WIN) -c $(INC) $(CFLAGS) $< -o $@
+
+$(SOL_WIN_ODIR):
+	mkdir -p $@
+
+sol_win: $(SOL_OBJS)
+	$(CC_WIN) -o sol.exe $^
 
 # --------------------
 clean:
-	rm -rf obj *.out
+	rm -rf obj *.out *.exe

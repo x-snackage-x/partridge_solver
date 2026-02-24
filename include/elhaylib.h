@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#if _WIN32
+#ifdef _WIN32
 #pragma warning(disable : 4200)
 #endif
 

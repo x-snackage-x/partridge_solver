@@ -42,11 +42,12 @@ Steps:
     1. ~~If Tree to large print solution branch instead~~
     1. Expand to be able to pass a starting configutation
     1. Add command line arguments for controlling visualizer and printing
-        - puzzle size
-        - vis and novis
-        - fulllog and nofulllog
+        - ~~puzzle size~~
+        - ~~vis and novis~~
+        - ~~fulllog and nofulllog~~
         - Set iteration limit?
     1. Imrprove code quality and cleanup
+    1. Add five more colors
     1. Fix VSC setup defaults for run and debug (seems like the run config/task/launch is missing maybe that's what's causing issues)
 
 Visualizer  
