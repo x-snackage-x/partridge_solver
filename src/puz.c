@@ -26,8 +26,8 @@ void init_puzzle(puzzle_def* puzzle) {
     // init Grid
     puzzle->grid_dimension = (puzzle->size * (puzzle->size + 1)) / 2;
     int grid_size = puzzle->grid_dimension;
-    puzzle->puzzle_grid = malloc(grid_size * sizeof(int*));
-    puzzle->puzzle_grid[0] = malloc(grid_size * grid_size * sizeof(int));
+    puzzle->puzzle_grid = calloc(grid_size, sizeof(int*));
+    puzzle->puzzle_grid[0] = calloc(grid_size, grid_size * sizeof(int));
     for(int i = 1; i < grid_size; i++) {
         puzzle->puzzle_grid[i] = puzzle->puzzle_grid[0] + i * grid_size;
     }
@@ -154,7 +154,7 @@ int main() {
     init_puzzle(&my_puzzle_def);
 
     printf("Print Grid:\n");
-    print_grid(&my_puzzle_def);
+    print_grid(&my_puzzle_def, stdout);
 
     printf("---------------------------\n");
 
@@ -162,7 +162,7 @@ int main() {
     printf("Block Dyn-array Cap: %ld - Block Dyn-array Size: %ld\n",
            my_puzzle_def.blocks->dynarr_capacity,
            my_puzzle_def.blocks->dynarr_size);
-    print_free_pieces(&my_puzzle_def);
+    print_free_pieces(&my_puzzle_def, stdout);
 
     printf("---------------------------\n");
 
@@ -177,18 +177,18 @@ int main() {
     printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
     printf("Placing 1 @ (0,0): %d\n", place_block(&my_puzzle_def, 1, 0, 0));
 
-    print_grid(&my_puzzle_def);
+    print_grid(&my_puzzle_def, stdout);
 
     printf("Removing 1 @ (0,0): %d\n", remove_block(&my_puzzle_def, 1, 0, 0));
-    print_grid(&my_puzzle_def);
+    print_grid(&my_puzzle_def, stdout);
 
     printf("Removing 1 @ (0,0): %d\n", remove_block(&my_puzzle_def, 1, 0, 0));
     printf("Removing 5 @ (3,5): %d\n", remove_block(&my_puzzle_def, 5, 3, 5));
     printf("Removing 4 @ (32,5): %d\n", remove_block(&my_puzzle_def, 4, 32, 5));
-    print_grid(&my_puzzle_def);
+    print_grid(&my_puzzle_def, stdout);
 
     printf("Is puzzle solved: %d\n", is_puzzle_solved(&my_puzzle_def));
 
-    print_free_pieces(&my_puzzle_def);
+    print_free_pieces(&my_puzzle_def, stdout);
 }
 #endif
