@@ -47,7 +47,7 @@ Steps:
         - ~~fulllog and nofulllog~~
         - Set iteration limit?
     1. Imrprove code quality and cleanup
-    1. Add five more colors
+    1. ~~Add five more colors~~
     1. Fix VSC setup defaults for run and debug (seems like the run config/task/launch is missing maybe that's what's causing issues)
 
 Visualizer  
@@ -56,7 +56,7 @@ Visualizer
 - Implement a GUI using `raylib`/`raygui`
 
 Portability
-- Port to Windows 
+- ~~Port to Windows~~ 
 - Port to WASM using `Emscripten`?
 
 Puzzle

@@ -1,9 +1,4 @@
-// First check if puzzle is in solvable state
-// - Find smallest, bounded gap in all line scans
-//     * Horizontally and Vertically
-// - If smaller than available smallest piece
-// -> Puzzle not in solvable state and go back in tree
-// Else place tile
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,10 +48,10 @@ int root_tile;
 // if it is exhausted then the tree descent has to move
 // to the parent of the selected node
 typedef struct {
-    int tile_type;
-    int x_pos;
-    int y_pos;
-    bool valid_tiles[16];
+    uint8_t tile_type;
+    uint8_t x_pos;
+    uint8_t y_pos;
+    uint16_t valid_tiles;
 } node_placement;
 
 bool is_solvable;
@@ -65,15 +60,15 @@ int loop_n;
 
 typedef enum { NODE_PARTRIDGE = 1001 } my_node_types;
 
-int random_tile_select(bool* filter, int max_tile_size);
-int largest_tile_select(bool* filter, int max_tile_size);
+int random_tile_select(uint16_t filter, int max_tile_size);
+int largest_tile_select(uint16_t filter, int max_tile_size);
 
 bool line_scan_hor(puzzle_def* puzzle, point* result);
 bool find_smallest_gap(puzzle_def* puzzle, gap_search_result* res_struct);
 bool is_solvable_gap_cond(puzzle_def* puzzle);
 
-void set_exhausted_tiles(bool* valid_tiles);
-int n_ok_tile_types(bool* valid_tiles);
+uint16_t set_exhausted_tiles(uint16_t valid_tiles);
+int n_ok_tile_types(uint16_t valid_tiles);
 
 void handle_input(int argc, char** argv, int* puzzle_type);
 int is_integer(const char* arg);
@@ -103,9 +98,7 @@ void setup(int puzzle_type) {
         min_Tile = 1;
     }
     int selected_tile = rand() % (puzzle_type + 1 - min_Tile) + min_Tile;
-    bool* valid_tiles = malloc(sizeof(bool) * (puzzle_type + 1));
-    memset(valid_tiles, true, sizeof(bool) * (puzzle_type + 1));
-    valid_tiles[0] = false;
+    uint16_t valid_tiles = 0xFFFF;
 
     place_block(my_puzzle, selected_tile, 0, 0);
     if(print_full_log)
@@ -115,13 +108,11 @@ void setup(int puzzle_type) {
     node_buffer->tile_type = selected_tile;
     node_buffer->x_pos = 0;
     node_buffer->y_pos = 0;
-    memcpy(node_buffer->valid_tiles, valid_tiles,
-           sizeof(bool) * (puzzle_type + 1));
+    node_buffer->valid_tiles = valid_tiles;
 
     tree_node_root(&tree_result, &placement_record, NODE_PARTRIDGE, node_size,
                    node_buffer);
     last_placement = tree_result.node_ptr;
-    free(valid_tiles);
     free(node_buffer);
     root_tile = selected_tile;
 }
@@ -154,9 +145,7 @@ tree_node* record_placement(int selected_tile,
     node_buffer->tile_type = selected_tile;
     node_buffer->x_pos = x_pos;
     node_buffer->y_pos = y_pos;
-    memset(node_buffer->valid_tiles, true,
-           sizeof(bool) * (my_puzzle->size + 1));
-    node_buffer->valid_tiles[0] = false;
+    node_buffer->valid_tiles = 0xFFFF;
 
     tree_node_add(&tree_result, &placement_record, prev_placement,
                   NODE_PARTRIDGE, node_size, node_buffer);
@@ -172,13 +161,13 @@ tree_node* record_placement(int selected_tile,
     return tree_result.node_ptr;
 }
 
-bool* record_removal(int selected_tile,
-                     int x_pos,
-                     int y_pos,
-                     tree_node* parent) {
+uint16_t record_removal(int selected_tile,
+                        int x_pos,
+                        int y_pos,
+                        tree_node* parent) {
     node_placement* parent_placement_data = (node_placement*)parent->data;
-    bool* valid_tiles = parent_placement_data->valid_tiles;
-    valid_tiles[selected_tile] = false;
+
+    parent_placement_data->valid_tiles &= ~(1 << (selected_tile - 1));
 
     // visualize removal
     if(visualizer_set) {
@@ -187,7 +176,7 @@ bool* record_removal(int selected_tile,
         grid_reset_func(my_puzzle->grid_dimension);
     }
 
-    return valid_tiles;
+    return parent_placement_data->valid_tiles;
 }
 
 bool solution_search() {
@@ -196,7 +185,7 @@ bool solution_search() {
     is_solvable = is_solvable_gap_cond(my_puzzle);
     is_solved = is_puzzle_solved(my_puzzle);
 
-    bool* valid_tiles;
+    uint16_t valid_tiles_buffer = 0xFFFF;
 
     point result_buffer = {0};
     loop_n = 0;
@@ -210,13 +199,14 @@ bool solution_search() {
         line_scan_hor(my_puzzle, &result_buffer);
 
         node_placement* placement_data = (node_placement*)last_placement->data;
-        valid_tiles = placement_data->valid_tiles;
-        set_exhausted_tiles(valid_tiles);
+        placement_data->valid_tiles =
+            set_exhausted_tiles(placement_data->valid_tiles);
 
         // select one tile and place
         RETURN_CODES placement_code = -1;
         do {
-            int selected_tile = random_tile_select(valid_tiles, puzzle_type);
+            int selected_tile =
+                random_tile_select(placement_data->valid_tiles, puzzle_type);
             if(print_full_log)
                 fprintf(log_fptr, "Current tile: %d", selected_tile);
 
@@ -232,12 +222,15 @@ bool solution_search() {
                     record_placement(selected_tile, result_buffer.x_index,
                                      result_buffer.y_index, last_placement);
             } else {
-                valid_tiles[selected_tile] = false;
+                placement_data->valid_tiles &= ~(1 << (selected_tile - 1));
 
                 if(print_full_log)
                     fprintf(log_fptr, " - Placement success: false\n");
             }
-        } while(placement_code != SUCCESS && n_ok_tile_types(valid_tiles) > 0);
+
+            valid_tiles_buffer = placement_data->valid_tiles;
+        } while(placement_code != SUCCESS &&
+                n_ok_tile_types(valid_tiles_buffer) > 0);
 
         is_solvable = is_solvable_gap_cond(my_puzzle);
         if(!is_solvable) {
@@ -248,9 +241,9 @@ bool solution_search() {
             remove_block(my_puzzle, cur_placement_data.tile_type,
                          cur_placement_data.x_pos, cur_placement_data.y_pos);
 
-            valid_tiles = record_removal(cur_placement_data.tile_type,
-                                         cur_placement_data.x_pos,
-                                         cur_placement_data.y_pos, parent);
+            valid_tiles_buffer = record_removal(
+                cur_placement_data.tile_type, cur_placement_data.x_pos,
+                cur_placement_data.y_pos, parent);
 
             if(print_full_log)
                 fprintf(log_fptr, " Remove tile: %d, Pos. (%2d,%2d)\n",
@@ -260,7 +253,7 @@ bool solution_search() {
             last_placement = parent;
         }
 
-        while(n_ok_tile_types(valid_tiles) == 0) {
+        while(n_ok_tile_types(valid_tiles_buffer) == 0) {
             tree_node* parent = last_placement->parent;
             node_placement cur_placement_data =
                 *(node_placement*)last_placement->data;
@@ -286,9 +279,9 @@ bool solution_search() {
                 goto finish;
             }
 
-            valid_tiles = record_removal(cur_placement_data.tile_type,
-                                         cur_placement_data.x_pos,
-                                         cur_placement_data.y_pos, parent);
+            valid_tiles_buffer = record_removal(
+                cur_placement_data.tile_type, cur_placement_data.x_pos,
+                cur_placement_data.y_pos, parent);
 
             if(print_full_log)
                 fprintf(log_fptr, " Remove tile: %d, Pos. (%2d,%2d)\n",
@@ -302,7 +295,6 @@ bool solution_search() {
     }
 
 finish:
-
     return is_puzzle_solved(my_puzzle);
 }
 
@@ -387,7 +379,7 @@ int main(int argc, char* argv[]) {
     bool* flags = malloc(sizeof(bool) * placement_record.tree_size);
     memset(flags, true, placement_record.tree_size);
 
-    if(is_solved && placement_record.tree_size <= 100000) {
+    if(placement_record.tree_size <= 100000) {
         printTree(placement_record.tree_root, 0, false, flags, tree_fptr);
     } else if(is_solved) {
         printWinningBranch(tree_fptr);
@@ -514,6 +506,10 @@ bool find_smallest_gap(puzzle_def* puzzle, gap_search_result* res_struct) {
     return true;
 }
 
+// Checks if puzzle is in solvable state by:
+// - Finding smallest, bounded gap in all line scans
+//     * Horizontally and Vertically
+// - If smaller than available smallest piece -> not solvable
 bool is_solvable_gap_cond(puzzle_def* puzzle) {
     gap_search_result result;
     bool gap_bool = find_smallest_gap(puzzle, &result);
@@ -534,11 +530,11 @@ bool is_solvable_gap_cond(puzzle_def* puzzle) {
     return is_solvable;
 }
 
-int random_tile_select(bool* filter, int max_tile_size) {
+int random_tile_select(uint16_t filter, int max_tile_size) {
     int* candidate_tiles = calloc((size_t)max_tile_size, sizeof(int));
     int j = 0;
     for(int i = 1; i <= max_tile_size; ++i) {
-        if(filter[i]) {
+        if((filter >> (i - 1)) & 1) {
             candidate_tiles[j++] = i;
         }
     }
@@ -558,10 +554,10 @@ int random_tile_select(bool* filter, int max_tile_size) {
     return random_tile;
 }
 
-int largest_tile_select(bool* filter, int max_tile_size) {
+int largest_tile_select(uint16_t filter, int max_tile_size) {
     int selected_tile = 0;
     for(int i = max_tile_size; i > 0; --i) {
-        if(filter[i]) {
+        if((filter >> i) & 1) {
             selected_tile = i;
             break;
         }
@@ -570,19 +566,20 @@ int largest_tile_select(bool* filter, int max_tile_size) {
     return selected_tile;
 }
 
-void set_exhausted_tiles(bool* valid_tiles) {
-    for(int i = 0; i <= my_puzzle->size; ++i) {
+uint16_t set_exhausted_tiles(uint16_t valid_tiles) {
+    for(int i = 1; i <= my_puzzle->size; ++i) {
         int n_tile_pcs = get_n_available_pieces(my_puzzle, i);
         if(n_tile_pcs == 0) {
-            valid_tiles[i] = false;
+            valid_tiles &= ~(1 << (i - 1));
         }
     }
+    return valid_tiles;
 }
 
-int n_ok_tile_types(bool* valid_tiles) {
+int n_ok_tile_types(uint16_t valid_tiles) {
     int available_tiles = 0;
-    for(int i = 0; i <= my_puzzle->size; ++i) {
-        available_tiles += valid_tiles[i] ? 1 : 0;
+    for(int i = 0; i < my_puzzle->size; ++i) {
+        available_tiles += (valid_tiles >> i) & 1;
     }
     return available_tiles;
 }
@@ -668,12 +665,12 @@ void printWinningBranch(FILE* file_ptr) {
 
     tree_node* current_node = last_placement;
     node_placement placement_data = {0};
-    bool* tile_bools;
+    uint16_t tiles_mask;
     bool ascending = true;
     while(ascending) {
         placement_data = *(node_placement*)current_node->data;
 
-        tile_bools = placement_data.valid_tiles;
+        tiles_mask = placement_data.valid_tiles;
 
         fprintf(file_ptr, "┌──────────────────────────");
         for(int i = 0; i < extra_spaces; i++)
@@ -684,7 +681,7 @@ void printWinningBranch(FILE* file_ptr) {
                 "", placement_data.x_pos, placement_data.y_pos);
         fprintf(file_ptr, "│ Valid Tiles:   ");
         for(int i = 0; i < my_puzzle->size; ++i) {
-            fprintf(file_ptr, "%d", tile_bools[i + 1] ? 1 : 0);
+            fprintf(file_ptr, "%d", (tiles_mask >> i) & 1);
         }
         fprintf(file_ptr, "  │\n");
         fprintf(file_ptr, "└──────────────────────────");
@@ -707,12 +704,12 @@ void printWinningBranch(FILE* file_ptr) {
 
 void printNode(tree_node* ptr_node, FILE* file_ptr) {
     node_placement placement_data = *(node_placement*)ptr_node->data;
-    bool* tile_bools = placement_data.valid_tiles;
+    uint16_t tiles_mask = placement_data.valid_tiles;
     fprintf(file_ptr, "[Tile: %d - Pos.:(%2d,%2d) ", placement_data.tile_type,
             placement_data.x_pos, placement_data.y_pos);
     fprintf(file_ptr, "Valid Tiles: ");
     for(int i = 0; i < my_puzzle->size; ++i) {
-        fprintf(file_ptr, "%d", tile_bools[i + 1] ? 1 : 0);
+        fprintf(file_ptr, "%d", (tiles_mask >> i) & 1);
     }
     fprintf(file_ptr, "]\n");
 }
