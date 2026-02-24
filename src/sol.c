@@ -333,8 +333,10 @@ int main(int argc, char* argv[]) {
         set_visualizer(prep_vis_grid, render_vis_grid, reset_vis_grid,
                        record_vis_grid, set_vis_block, remove_vis_block,
                        def_block_colors);
-        COLOR blocks[] = {WHITE, ROYAL_BLUE, ORANGE, MAGENTA, CYAN,
-                          RED,   GREEN,      GRAY,   YELLOW,  BLACK};
+        COLOR blocks[] = {WHITE,     ROYAL_BLUE, ORANGE, MAGENTA,
+                          CYAN,      RED,        GREEN,  GRAY,
+                          DARKGRAY,  YELLOW,     BLUE,   HINGREEN,
+                          HINYELLOW, HINBLUE,    PINK,   LIGRAY};
         block_set_color_func((int*)blocks, my_puzzle->size);
         grid_prep_func(my_puzzle->grid_dimension);
 

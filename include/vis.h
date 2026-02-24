@@ -13,7 +13,13 @@ typedef enum {
     WHITE = 7,
     ORANGE = 202,
     ROYAL_BLUE = 17,
-    GRAY = 240
+    GRAY = 8,
+    HINGREEN = 10,
+    HINYELLOW = 11,
+    HINBLUE = 12,
+    PINK = 13,
+    LIGRAY = 250,
+    DARKGRAY = 235
 } COLOR;
 
 void prep_vis_grid(int size);
