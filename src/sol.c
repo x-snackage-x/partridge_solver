@@ -4,17 +4,24 @@
 // - If smaller than available smallest piece
 // -> Puzzle not in solvable state and go back in tree
 // Else place tile
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #ifdef __linux__
 #include <unistd.h>
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
 #endif
 
 #include <signal.h>
 #include <sys/stat.h>
 
+#include <limits.h>
 #include <puz.h>
 #include <sol.h>
 #include <vis.h>
@@ -49,11 +56,12 @@ typedef struct {
     int tile_type;
     int x_pos;
     int y_pos;
-    bool valid_tiles[17];
+    bool valid_tiles[16];
 } node_placement;
 
 bool is_solvable;
 bool is_solved;
+int loop_n;
 
 typedef enum { NODE_PARTRIDGE = 1001 } my_node_types;
 
@@ -67,6 +75,8 @@ bool is_solvable_gap_cond(puzzle_def* puzzle);
 void set_exhausted_tiles(bool* valid_tiles);
 int n_ok_tile_types(bool* valid_tiles);
 
+void handle_input(int argc, char** argv, int* puzzle_type);
+int is_integer(const char* arg);
 void printWinningBranch(FILE* file_ptr);
 void printNode(tree_node* ptr_node, FILE* file_ptr);
 void printTree(tree_node* ptr_node,
@@ -130,6 +140,10 @@ void set_visualizer(VIS_F_PTR grid_prep_func_in,
     block_set_func = block_set_func_in;
     block_remove_func = block_remove_func_in;
     block_set_color_func = block_set_color_func_in;
+
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
 }
 
 tree_node* record_placement(int selected_tile,
@@ -154,7 +168,11 @@ tree_node* record_placement(int selected_tile,
         grid_render_func(my_puzzle->grid_dimension);
         grid_reset_func(my_puzzle->grid_dimension);
         if(my_puzzle->size < 8)
-            usleep(5 * 1000);
+#ifdef _WIN32
+            Sleep(0.0005);
+#else
+            usleep(5 * 100);
+#endif
     }
 
     return tree_result.node_ptr;
@@ -174,7 +192,11 @@ bool* record_removal(int selected_tile,
         grid_render_func(my_puzzle->grid_dimension);
         grid_reset_func(my_puzzle->grid_dimension);
         if(my_puzzle->size < 8)
-            usleep(5 * 1000);
+#ifdef _WIN32
+            Sleep(0.0005);
+#else
+            usleep(5 * 100);
+#endif
     }
 
     return valid_tiles;
@@ -189,11 +211,10 @@ bool solution_search() {
     bool* valid_tiles;
 
     point result_buffer = {0};
-    int loop_n = 0;
-    int max_loops = 100 * 1000 * 1000;  // TODO remove limiter
-    while(!is_solved && loop_n++ < max_loops) {
+    loop_n = 0;
+    while(!is_solved) {
         if(loop_n % 100000 == 0 && !visualizer_set) {
-            printf("Current iter.: %d/%d", loop_n, max_loops);
+            printf("Current iter.: %d", loop_n);
             fflush(stdout);
             printf("\r");
         }
@@ -292,20 +313,17 @@ bool solution_search() {
         is_solved = is_puzzle_solved(my_puzzle);
     }
 
-    if(loop_n == max_loops) {
-        printf("Loop exhausted\n");
-        if(print_full_log)
-            fprintf(log_fptr, "Loop exhausted\n");
-        return is_solvable;
-    }
-
 finish:
+
     return is_puzzle_solved(my_puzzle);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     print_full_log = false;
     visualizer_set = false;
+    int puzzle_type = 8;
+
+    handle_input(argc, argv, &puzzle_type);
 
     // Make logs dir
     struct stat st = {0};
@@ -317,7 +335,6 @@ int main() {
     log_fptr = fopen("logs/log.txt", "w");
     tree_fptr = fopen("logs/tree.txt", "w");
 
-    int puzzle_type = 8;
     setup(puzzle_type);
 
     if(visualizer_set) {
@@ -333,7 +350,11 @@ int main() {
         block_set_func(root_tile, 0, 0);
         grid_render_func(my_puzzle->grid_dimension);
         grid_reset_func(my_puzzle->grid_dimension);
-        usleep(5 * 1000);
+#ifdef _WIN32
+        Sleep(0.0005);
+#else
+        usleep(5 * 100);
+#endif
     }
 
     clock_t begin = clock();
@@ -364,6 +385,8 @@ int main() {
     fprintf(tree_fptr, "Tree Size: %zu Nodes\n", placement_record.tree_size);
     fprintf(log_fptr, "\nTree Size: %zu Nodes\n", placement_record.tree_size);
 
+    printf("n-Iterations: %d\n", loop_n);
+    fprintf(log_fptr, "n-Iterations: %d\n", loop_n);
     printf("Solve Time: %f seconds\n", solve_time);
     fprintf(log_fptr, "Solve Time: %f seconds\n", solve_time);
 
@@ -380,7 +403,7 @@ int main() {
     fclose(log_fptr);
     fclose(tree_fptr);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 bool line_scan_hor(puzzle_def* puzzle, point* result) {
@@ -570,6 +593,79 @@ int n_ok_tile_types(bool* valid_tiles) {
     return available_tiles;
 }
 
+void handle_input(int argc, char** argv, int* puzzle_type) {
+    bool integer_inputed = false;
+    for(int i = 1; i < argc; ++i) {
+        if(strcmp(argv[i], "vis") == 0) {
+            visualizer_set = true;
+        } else if(strcmp(argv[i], "fulllog") == 0) {
+            print_full_log = true;
+        } else if(strcmp(argv[i], "vis") == 0 ||
+                  strcmp(argv[i], "nofulllog") == 0) {
+            continue;
+        } else if(strcmp(argv[i], "-h") == 0) {
+            printf(
+                "Usage: ./sol.out {number} {vis/novis} {fulllog/nofulllog}\n"
+                "Command Line arguments are optional\n"
+                "Defaults: 8 novis nofulllog.\n");
+            return exit(EXIT_SUCCESS);
+        } else if(is_integer(argv[i]) != 0 && !integer_inputed) {
+            int num = (int)strtol(argv[1], NULL, 10);
+            if(num < 0) {
+                printf("A puzzle cannot be defined with a negative number.\n");
+                return exit(EXIT_FAILURE);
+            } else if(num > 16) {
+                printf(
+                    "Trying to descend to a solution for a puzzle of type "
+                    "greater than 16 is highly ill advised.\nTrying to find "
+                    "one for a size greater than 10 is already excessive.\n\n "
+                    "I have you seen RAM prices lately? I doubt you have "
+                    "enough memory on your personal machine to try and find a "
+                    "solution\nfor anything greater than 9 anyway.\n\nIf "
+                    "you're running this on some kind of computing server, I "
+                    "ask why?\n\nI refuse to entertain your absurd "
+                    "demands.\n\n(I also only allocated enough memory (16 "
+                    "bits) for representing\nmaximally 16 different tile "
+                    "types, so there's that)\n");
+                return exit(EXIT_FAILURE);
+            }
+            *puzzle_type = num;
+            integer_inputed = true;
+        } else if(is_integer(argv[i]) != 0 && integer_inputed) {
+            printf("Only one integer permited as input.\n");
+            return exit(EXIT_FAILURE);
+        } else {
+            printf(
+                "Command Line argument not recognized: only $number, "
+                "vis/novis, fulllog/nofulllog are accepted.\n"
+                "Usage example: ./sol.out 8 vis nofulllog\n");
+            return exit(EXIT_FAILURE);
+        }
+    }
+}
+
+int is_integer(const char* arg) {
+    char* endptr;
+    errno = 0;
+    long value = strtol(arg, &endptr, 10);
+
+    // Check for various errors:
+    // 1. No conversion occurred (empty string or not a number)
+    if(arg == endptr || *endptr != '\0') {
+        return 0;
+    }
+    // 2. Out of the range of a 'long'
+    if(errno == ERANGE) {
+        return 0;
+    }
+    // 3. Out of the range of an 'int' (if specifically needed)
+    if(value > INT_MAX || value < INT_MIN) {
+        return 0;
+    }
+
+    return 1;
+}
+
 void printWinningBranch(FILE* file_ptr) {
     int extra_spaces = my_puzzle->size - 8;
     extra_spaces = extra_spaces < 0 ? 0 : extra_spaces;
@@ -585,8 +681,10 @@ void printWinningBranch(FILE* file_ptr) {
 
         tile_bools = placement_data.valid_tiles;
 
-        fprintf(file_ptr, "┌─────────────────────────%*s┐\n", extra_spaces + 1,
-                "─");
+        fprintf(file_ptr, "┌──────────────────────────");
+        for(int i = 0; i < extra_spaces; i++)
+            fprintf(file_ptr, "─");
+        fprintf(file_ptr, "┐\n");
         fprintf(file_ptr, "│ Tile: %2d %*s-%*s Pos.:(%2d, %2d) │\n",
                 placement_data.tile_type, extra_spaces_l, "", extra_spaces_r,
                 "", placement_data.x_pos, placement_data.y_pos);
@@ -595,8 +693,10 @@ void printWinningBranch(FILE* file_ptr) {
             fprintf(file_ptr, "%d", tile_bools[i + 1] ? 1 : 0);
         }
         fprintf(file_ptr, "  │\n");
-        fprintf(file_ptr, "└─────────────────────────%*s┘\n", extra_spaces + 1,
-                "─");
+        fprintf(file_ptr, "└──────────────────────────");
+        for(int i = 0; i < extra_spaces; i++)
+            fprintf(file_ptr, "─");
+        fprintf(file_ptr, "┘\n");
 
         if(current_node->parent != NULL) {
             fprintf(file_ptr, "             %*s∧\n", extra_spaces_l, "");

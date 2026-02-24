@@ -1,6 +1,7 @@
 IDIR=include
 SDIR=src
 CC=cc
+CC_WIN = x86_64-w64-mingw32-gcc
 DEBUG_FLAGS = -g3 -Og -fno-omit-frame-pointer
 CFLAGS=-Wall $(DEBUG_FLAGS)
 PROD_FLAGS = -O2
@@ -81,13 +82,14 @@ $(SOL_PROD_ODIR):
 sol_prod: $(SOL_OBJS)
 	$(CC) -o sol_prod.out $^ $(LIBS)
 
-# Prod MSVC Windows build
-sol_prod_win:
-	cl /O2 /I$(IDIR) /Fe:sol_prod.exe \
-	   $(SDIR)/elhaylib.c \
-	   $(SDIR)/vis.c \
-	   $(SDIR)/puz.c \
-	   $(SDIR)/sol.c
+# Prod MSVC Windows build: for documentation only
+#sol_prod_win:
+#	mkdir obj\sol_msvc 2>nul
+#	cl /O2 /I$(IDIR) /Foobj\sol_msvc\ /Fe:sol_prod.exe \
+#	   $(SDIR)/elhaylib.c \
+#	   $(SDIR)/vis.c \
+#	   $(SDIR)/puz.c \
+#	   $(SDIR)/sol.c
 
 # --------------------
 clean:
