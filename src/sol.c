@@ -62,9 +62,10 @@ int largest_tile_select(bool* filter, int max_tile_size);
 
 bool line_scan_hor(puzzle_def* puzzle, point* result);
 bool find_smallest_gap(puzzle_def* puzzle, gap_search_result* res_struct);
-bool is_solvable_first_check(puzzle_def* puzzle);
+bool is_solvable_gap_cond(puzzle_def* puzzle);
 
-int n_available_tiles(bool* valid_tiles);
+void set_exhausted_tiles(bool* valid_tiles);
+int n_ok_tile_types(bool* valid_tiles);
 
 void printWinningBranch(FILE* file_ptr);
 void printNode(tree_node* ptr_node, FILE* file_ptr);
@@ -182,7 +183,7 @@ bool* record_removal(int selected_tile,
 bool solution_search() {
     int puzzle_type = my_puzzle->size;
 
-    is_solvable = is_solvable_first_check(my_puzzle);
+    is_solvable = is_solvable_gap_cond(my_puzzle);
     is_solved = is_puzzle_solved(my_puzzle);
 
     bool* valid_tiles;
@@ -200,11 +201,11 @@ bool solution_search() {
         line_scan_hor(my_puzzle, &result_buffer);
 
         node_placement* placement_data = (node_placement*)last_placement->data;
-        valid_tiles = (bool*)&placement_data->valid_tiles;
+        valid_tiles = placement_data->valid_tiles;
+        set_exhausted_tiles(valid_tiles);
 
         // select one tile and place
-        RETURN_CODES placement_code = CONFLICT_ON_GRID;
-        bool tiles_available = true;
+        RETURN_CODES placement_code = -1;
         do {
             int selected_tile = random_tile_select(valid_tiles, puzzle_type);
             if(print_full_log)
@@ -221,21 +222,15 @@ bool solution_search() {
                 last_placement =
                     record_placement(selected_tile, result_buffer.x_index,
                                      result_buffer.y_index, last_placement);
-
-                // TODO set valid tile to false if tile is exhausted with
-                // last placement
             } else {
                 valid_tiles[selected_tile] = false;
+
                 if(print_full_log)
                     fprintf(log_fptr, " - Placement success: false\n");
             }
+        } while(placement_code != SUCCESS && n_ok_tile_types(valid_tiles) > 0);
 
-            int available_tiles = n_available_tiles(valid_tiles);
-            tiles_available = available_tiles > 0;
-
-        } while(placement_code != SUCCESS && tiles_available);
-
-        is_solvable = is_solvable_first_check(my_puzzle);
+        is_solvable = is_solvable_gap_cond(my_puzzle);
         if(!is_solvable) {
             tree_node* parent = last_placement->parent;
             node_placement cur_placement_data =
@@ -256,10 +251,7 @@ bool solution_search() {
             last_placement = parent;
         }
 
-        int available_tiles = n_available_tiles(valid_tiles);
-        tiles_available = available_tiles > 0;
-
-        while(!tiles_available) {
+        while(n_ok_tile_types(valid_tiles) == 0) {
             tree_node* parent = last_placement->parent;
             node_placement cur_placement_data =
                 *(node_placement*)last_placement->data;
@@ -295,9 +287,6 @@ bool solution_search() {
                         cur_placement_data.y_pos);
 
             last_placement = parent;
-
-            available_tiles = n_available_tiles(valid_tiles);
-            tiles_available = available_tiles > 0;
         }
 
         is_solved = is_puzzle_solved(my_puzzle);
@@ -508,7 +497,7 @@ bool find_smallest_gap(puzzle_def* puzzle, gap_search_result* res_struct) {
     return true;
 }
 
-bool is_solvable_first_check(puzzle_def* puzzle) {
+bool is_solvable_gap_cond(puzzle_def* puzzle) {
     gap_search_result result;
     bool gap_bool = find_smallest_gap(puzzle, &result);
 
@@ -564,7 +553,16 @@ int largest_tile_select(bool* filter, int max_tile_size) {
     return selected_tile;
 }
 
-int n_available_tiles(bool* valid_tiles) {
+void set_exhausted_tiles(bool* valid_tiles) {
+    for(int i = 0; i <= my_puzzle->size; ++i) {
+        int n_tile_pcs = get_n_available_pieces(my_puzzle, i);
+        if(n_tile_pcs == 0) {
+            valid_tiles[i] = false;
+        }
+    }
+}
+
+int n_ok_tile_types(bool* valid_tiles) {
     int available_tiles = 0;
     for(int i = 0; i <= my_puzzle->size; ++i) {
         available_tiles += valid_tiles[i] ? 1 : 0;
@@ -585,9 +583,9 @@ void printWinningBranch(FILE* file_ptr) {
     while(ascending) {
         placement_data = *(node_placement*)current_node->data;
 
-        tile_bools = (bool*)&placement_data.valid_tiles;
+        tile_bools = placement_data.valid_tiles;
 
-        fprintf(file_ptr, "┌─────────────────────────%*s┐\n", extra_spaces,
+        fprintf(file_ptr, "┌─────────────────────────%*s┐\n", extra_spaces + 1,
                 "─");
         fprintf(file_ptr, "│ Tile: %2d %*s-%*s Pos.:(%2d, %2d) │\n",
                 placement_data.tile_type, extra_spaces_l, "", extra_spaces_r,
@@ -597,7 +595,7 @@ void printWinningBranch(FILE* file_ptr) {
             fprintf(file_ptr, "%d", tile_bools[i + 1] ? 1 : 0);
         }
         fprintf(file_ptr, "  │\n");
-        fprintf(file_ptr, "└─────────────────────────%*s┘\n", extra_spaces,
+        fprintf(file_ptr, "└─────────────────────────%*s┘\n", extra_spaces + 1,
                 "─");
 
         if(current_node->parent != NULL) {
@@ -615,7 +613,7 @@ void printWinningBranch(FILE* file_ptr) {
 
 void printNode(tree_node* ptr_node, FILE* file_ptr) {
     node_placement placement_data = *(node_placement*)ptr_node->data;
-    bool* tile_bools = (bool*)&placement_data.valid_tiles;
+    bool* tile_bools = placement_data.valid_tiles;
     fprintf(file_ptr, "[Tile: %d - Pos.:(%2d,%2d) ", placement_data.tile_type,
             placement_data.x_pos, placement_data.y_pos);
     fprintf(file_ptr, "Valid Tiles: ");
