@@ -2,9 +2,28 @@
 
 A Partridge Puzzle solver inspired by the Stand-up Maths video ["The impossible puzzle with over a million solutions!"](https://www.youtube.com/watch?v=eqyuQZHfNPQ).
 
-Useful links:
+## Usage
+
+The solver is implemented as a consol program that can be called with three optional command line arguments. Passing an integer will be interpreted as the desired puzzle definition type i.e. the size of the largest tile. The flags `{vis/novis} {fulllog/nofulllog}` can activate the visualizer and the full log.  
+The defaults are: `8 novis nofulllog`  
+
+```shell
+wd$: ./sol.out {integer} {vis/novis} {fulllog/nofulllog}
+```
+Currently, the terminal visualizer will only work for grid sizes and terminal window sizes that don't result in scrolling behavior.
+
+A `makefile` is provided for building the project as either a Linux or Windows application. 
+
+## Usefull links puzzle
+
+More info on the puzzle can be found here:
+
 - The Partridge Puzzle by Robert T. Wainwright: https://www.mathpuzzle.com/partridge.html
 - Matt Scroggs web interactive "Squares": https://www.mscroggs.co.uk/squares/
+
+## Usefull links project 
+
+Sources that were usefull while implementing the project.
 
 WASM Stuff:
 - https://developer.mozilla.org/en-US/docs/WebAssembly
@@ -12,13 +31,11 @@ WASM Stuff:
 - Compiling C to WebAssembly without Emscripten: https://surma.dev/things/c-to-webassembly/
 
 Visualizer Stuff:
-- https://www.uninformativ.de/blog/postings/2016-12-17/0/POSTING-en.html ie use ▀▀
+- https://www.uninformativ.de/blog/postings/2016-12-17/0/POSTING-en.html i.e. use ▀▀
 - https://notes.burke.libbey.me/ansi-escape-codes/
 
 Make File starting guide:
 - https://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/
-
-Currently, the terminal visualizer will only work for grid sizes and terminal window sizes that don't result in scrolling behavior.
 
 ## Open Tasks/Improvements:
 
@@ -45,7 +62,7 @@ Steps:
         - ~~puzzle size~~
         - ~~vis and novis~~
         - ~~fulllog and nofulllog~~
-        - Set iteration limit?
+        - Set iteration limit or tree size limit?
     1. Improve code quality and cleanup
     1. ~~Add five more colors~~
     1. Fix VSC setup defaults for run and debug (seems like the run config/task/launch is missing maybe that's what's causing issues)
