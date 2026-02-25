@@ -2,6 +2,8 @@
 
 A Partridge Puzzle solver inspired by the Stand-up Maths video ["The impossible puzzle with over a million solutions!"](https://www.youtube.com/watch?v=eqyuQZHfNPQ).
 
+https://github.com/user-attachments/assets/3a07d338-07fe-4609-9ce8-4c470945a787
+
 ## Usage
 
 The solver is implemented as a consol program that can be called with three optional command line arguments. Passing an integer will be interpreted as the desired puzzle definition type i.e. the size of the largest tile. The flags `{vis/novis} {fulllog/nofulllog}` can activate the visualizer and the full log.  
