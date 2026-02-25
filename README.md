@@ -35,7 +35,7 @@ Steps:
     1. ~~Implement line scanning solver function~~
     1. ~~Use function pointer approach to pass a callback function that visualizes the board~~
     1. Improve Memory Consumption:
-        1. Transition from Array of bools for `valid_tiles` to bit representation
+        1. ~~Transition from Array of bools for `valid_tiles` to bit representation~~ -> Not sufficient, in testing still a limit of ~60mil nodes
         1. Implement tree pruning and memory free algorithm for elhaylib and use it to prune explored branches and free memory to avoid OOM errors
     1. Implement more complex `is_solvable` algos?
     1. ~~Implement a print function to save a visual representation of tree to a file~~
@@ -46,7 +46,7 @@ Steps:
         - ~~vis and novis~~
         - ~~fulllog and nofulllog~~
         - Set iteration limit?
-    1. Imrprove code quality and cleanup
+    1. Improve code quality and cleanup
     1. ~~Add five more colors~~
     1. Fix VSC setup defaults for run and debug (seems like the run config/task/launch is missing maybe that's what's causing issues)
 

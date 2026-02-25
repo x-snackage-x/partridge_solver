@@ -1,4 +1,3 @@
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -191,7 +190,8 @@ bool solution_search() {
     loop_n = 0;
     while(!is_solved) {
         if(++loop_n % 100000 == 0 && !visualizer_set) {
-            printf("Current iter.: %d", loop_n);
+            printf("Current iter.: %d - Tree Size: %zu Nodes", loop_n,
+                   placement_record.tree_size);
             fflush(stdout);
             printf("\r");
         }
@@ -585,7 +585,7 @@ int n_ok_tile_types(uint16_t valid_tiles) {
 }
 
 void handle_input(int argc, char** argv, int* puzzle_type) {
-    bool integer_inputed = false;
+    bool integer_inputted = false;
     for(int i = 1; i < argc; ++i) {
         if(strcmp(argv[i], "vis") == 0) {
             visualizer_set = true;
@@ -600,7 +600,7 @@ void handle_input(int argc, char** argv, int* puzzle_type) {
                 "Command Line arguments are optional\n"
                 "Defaults: 8 novis nofulllog.\n");
             return exit(EXIT_SUCCESS);
-        } else if(is_integer(argv[i]) != 0 && !integer_inputed) {
+        } else if(is_integer(argv[i]) != 0 && !integer_inputted) {
             int num = (int)strtol(argv[1], NULL, 10);
             if(num < 0) {
                 printf("A puzzle cannot be defined with a negative number.\n");
@@ -621,8 +621,8 @@ void handle_input(int argc, char** argv, int* puzzle_type) {
                 return exit(EXIT_FAILURE);
             }
             *puzzle_type = num;
-            integer_inputed = true;
-        } else if(is_integer(argv[i]) != 0 && integer_inputed) {
+            integer_inputted = true;
+        } else if(is_integer(argv[i]) != 0 && integer_inputted) {
             printf("Only one integer permited as input.\n");
             return exit(EXIT_FAILURE);
         } else {
