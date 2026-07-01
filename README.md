@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/3a07d338-07fe-4609-9ce8-4c470945a787
 
 ## Usage
 
-The solver is implemented as a console program that can be called with four optional command line arguments. Passing an integer will be interpreted as the desired puzzle definition type i.e. the size of the largest tile. The flags `<vis|novis> <fulllog|nofulllog> <override|nooverride>` can activate the visualizer, the full log and overriding the protection for unsolvable puzzles.  
+The solver is implemented as a console program that can be called with four optional command line arguments. Passing an integer will be interpreted as the desired puzzle definition type i.e. the size of the largest tile. The flags `<vis|novis> <fulllog|nofulllog> <override|nooverride>` can activate the visualizer, the full log and overriding the protection for unsolvable puzzle sizes.  
 The defaults are: `8 novis nofulllog nooverride`  
 
 ```shell
